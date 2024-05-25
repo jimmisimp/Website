@@ -1,5 +1,6 @@
 <script lang="ts">
     import { items, newItem, addItem, removeItem } from '$lib/index';
+    import '$lib/styles.scss';
   </script>
   
   <main>
@@ -17,39 +18,4 @@
       {/each}
     </ul>
   </main>
-  
-  <style lang="scss">
-    main {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 2rem;
-      font-family: Arial, sans-serif;
-  
-      h1 {
-        text-align: center;
-      }
-  
-      input {
-        padding: 0.5rem;
-        font-size: 1rem;
-      }
-  
-      button {
-        margin-left: 0.5rem;
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
-      }
-  
-      ul {
-        list-style-type: none;
-        padding: 0;
-      }
-  
-      li {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-      }
-    }
-  </style>
   
