@@ -22,7 +22,7 @@ async function generateText(setText, setButtonVisible, setFormVisible, inputRef)
     const stream = await openai.chat.completions.create({
         model: "gpt-4o",
         temperature: 0.75,
-        messages: [{ role: "user", content: "Write another sentence like this one `is creating ai-powered experiences.`. Keep it between 16 - 24 words, and try to avoid too many adjectives. Never imply that I'm a developer. Your output MUST start with `is` (lowercase) and be about the subject, Adam Yuras, a Senior UX and product design specialist from Philadelphia PA. He works at Comcast. It should describe what else he does. More about him from his profile: Designing, prototyping, and testing tools for customer-facing agents in the chat and voice space, for technicians, and retail associates with a focus on AI-enabled features. I'm a hands-on designer who prefers to explore solutions by developing prototypes in code. I'm a designer who thinks like a developer. I've helped develop the skills of those I work with. I'm a strong researcher, but I'm also business minded and know how to keep things moving and when we're wasting our time." }],
+        messages: [{ role: "user", content: "Write another sentence like this one `is creating ai-powered experiences.`. Keep it between 16 - 24 words, and try to avoid too many adjectives. Give it a slightly sardonic humor. Never imply that I'm a developer. Your output MUST start with `is` (lowercase) and be about the subject, Adam Yuras, a Senior UX and product design specialist from Philadelphia PA. He works at Comcast. It should describe what else he does. More about him from his profile: Designing, prototyping, and testing tools for customer-facing agents in the chat and voice space, for technicians, and retail associates with a focus on AI-enabled features. I'm a hands-on designer who prefers to explore solutions by developing prototypes in code. I'm a designer who thinks like a developer. I've helped develop the skills of those I work with. I'm a strong researcher, but I'm also business minded and know how to keep things moving and when we're wasting our time." }],
         stream: true,
     });
     
@@ -85,9 +85,9 @@ export const TextGenerator: React.FC = () => {
              :
             formVisible ? (
             <form onSubmit={(e) => generateColor(e, setColorData, setColorName, setColorCost, setFormVisible)} className='color-area'>
-                Let's create something colorful, with the power of ai:
+                Allow me to demonstrate my services, by generating some color:
                 <div className='input-group'>
-                    <input maxLength={64} name='colorInput' placeholder='Enter anything' className='color-input' ref={inputRef}/>
+                    <input maxLength={64} name='colorInput' placeholder='Enter an object, a phrase, whatever' className='color-input' ref={inputRef}/>
                     <button type="submit" className="main-button">Create</button>
                 </div>
             </form>
