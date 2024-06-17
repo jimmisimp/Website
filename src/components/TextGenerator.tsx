@@ -47,7 +47,7 @@ async function generateColor(e, setColorData, setColorName, setColorCost, setFor
         try {
             const completion = await openai.chat.completions.create({
                 model: "gpt-4o",
-                messages: [{ role: "user", content: `Generate an aesthetic color palette from five hex color values using the following description: ${input}. Output only these 3 hex values, a descriptive name for the palette, and a 'cost' for your services, to be paid in items related to the initial description, along with its equivalent cash value (this can be realistic or comical, all text should be lowercase) in JSON, in this format: {"colors": ["#FF0000","#00FF00","#0000FF, #00FFFF, #FFFF00"], "name": "pixel", "cost": "that will be 10,000 pixels ($0.01), thank you."}` }],
+                messages: [{ role: "user", content: `Generate an aesthetic color palette from five hex color values using the following description: ${input}. Output only five hex values, a descriptive name for the palette, and a 'cost' for your services, to be paid in items related to the initial description, along with its equivalent cash value (this can be realistic or comical, all text should be lowercase) in JSON, in this format: {"colors": ["#FF0000","#00FF00","#0000FF, #00FFFF, #FFFF00"], "name": "pixel", "cost": "that will be 10,000 pixels ($0.01), thank you."}` }],
                 response_format: { type: "json_object" }
             });
 
