@@ -2,13 +2,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&display=swap')
 
 $material-base: #d9d9d9
+$material-inset: #cfcece
 
 $text-base: #171717
 $text-hover: #2c2c2c
 $text-down: #3d3d3d
+$font-hand: 'Nanum Pen Script', Arial, Helvetica, sans-serif
+$font-sans: 'Assistant', Arial, Helvetica, sans-serif
 
 html
     background-color: $material-base
+
+#root
+    display: flex
+    height: 100vh
 
 .center-wrapper
     display: grid
@@ -18,9 +25,9 @@ html
     justify-items: center
     text-align: center
     margin: auto
-    max-width: 480px
-    height: 100vh
-    font-family: 'Nanum Pen Script', Arial, Helvetica, sans-serif
+    padding: 8px
+    max-width: 640px
+    font-family: $font-hand
     gap: 4px
 
 .name
@@ -34,12 +41,11 @@ html
     background-color:$text-base
     border-radius: 24px
     border: none
-    font-family: 'Assistant', Arial, Helvetica, sans-serif
+    font-family: $font-sans
     font-weight: 600
     letter-spacing: 0.25px
     font-size: 16px
     padding: 8px 16px
-    margin-top: 24px
     color: $material-base
     cursor: pointer
     transition: all 100ms ease
@@ -75,3 +81,55 @@ html
     transform: scaleX(1.1) scaleY(1.3)
     opacity: 0%
   
+.color-area
+    display: flex
+    flex-direction: column
+    margin-top: 24px
+    align-items: center
+    font-family: $font-sans
+    font-weight: 500
+    gap: 8px
+    padding: 16px
+    background-color: $material-inset
+    border-radius: 16px
+
+.input-group
+    display: flex
+    width: 100%
+    max-width: 480px
+    gap: 8px
+
+.color-input
+    font-family: $font-sans
+    flex-grow: 1
+    font-size: 18px
+    padding: 8px
+
+.color-results
+    display: flex
+    font-size: 14px
+    flex-direction: column
+    font-family: $font-sans
+    padding: 0 16px 16px
+    background-color: $material-inset
+    border-radius: 16px
+
+.color-name
+    font-family: $font-hand
+    font-size: 28px
+    margin-top: 24px
+    margin-bottom: 8px
+
+.color-cost
+    font-size: 20px
+    margin-top: 12px
+    margin-bottom: 8px
+    font-family: $font-hand
+
+.link
+    font-size: 16px
+    font-weight: 500
+    margin-top: 8px
+    a
+        padding: 2px 4px
+        border-radius: 4px
