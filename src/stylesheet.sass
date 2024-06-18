@@ -67,10 +67,16 @@ html
         width: 100%
         height: 100%
 
-.generated-text
+.subheader
     line-height: 100%
     font-size: 24px
     min-height: 52px
+
+.generated-text
+    line-height: 120%
+    text-align: left
+    font-size: 24px
+    font-family: $font-hand
 
 @keyframes pulse 
   0% 
@@ -81,11 +87,11 @@ html
     transform: scaleX(1.1) scaleY(1.3)
     opacity: 0%
   
-.color-area
+.content-block
     display: flex
     flex-direction: column
-    margin-top: 24px
-    align-items: center
+    margin-top: 8px
+    align-items: flex-start
     font-family: $font-sans
     font-weight: 500
     gap: 8px
@@ -96,7 +102,6 @@ html
 .input-group
     display: flex
     width: 100%
-    max-width: 480px
     gap: 8px
 
 .color-input
@@ -104,21 +109,16 @@ html
     flex-grow: 1
     font-size: 18px
     padding: 8px
+    border: none
+    border-radius: 8px
 
 .color-results
     display: flex
+    align-self: stretch
     font-size: 14px
     flex-direction: column
     font-family: $font-sans
-    padding: 0 16px 16px
-    background-color: $material-inset
     border-radius: 16px
-
-.color-name
-    font-family: $font-hand
-    font-size: 28px
-    margin-top: 24px
-    margin-bottom: 8px
 
 .color-cost
     font-size: 20px
@@ -129,7 +129,23 @@ html
 .link
     font-size: 16px
     font-weight: 500
-    margin-top: 8px
+    margin: 16px
+    font-family: $font-sans
     a
         padding: 2px 4px
         border-radius: 4px
+
+.avatar-container
+    display: flex
+    flex-direction: row
+    align-items: center
+    gap: 8px
+    margin-top: 24px
+    .avatar
+        width: 24px
+        border-radius: 6px
+    .avatar-label
+        font-family: $font-sans
+        font-weight: 600
+        line-height: 16px
+        font-size: 16px
