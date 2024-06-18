@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="center-wrapper">
 
-      <img src={"face_logo.svg"} className="face-logo" alt="logo" />
+      <img src={"face_logo.svg"} className="face-logo" alt="Website logo" />
       <div className='name'>
         adam yuras
       </div>
