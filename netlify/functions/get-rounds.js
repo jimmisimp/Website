@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { DataAPIClient } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 

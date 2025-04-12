@@ -1,4 +1,5 @@
-require('dotenv').config();
+// netlify/functions/record-round.js
+// require('dotenv').config(); // No longer needed in deployed function
 const { DataAPIClient, vector } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
