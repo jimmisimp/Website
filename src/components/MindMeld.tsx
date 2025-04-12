@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OpenAI from "openai";
-import anime, { easings } from 'animejs';
+import anime from 'animejs';
 
 const openai = new OpenAI({ apiKey: process.env.REACT_APP_OPENAIKEY, dangerouslyAllowBrowser: true });
 
@@ -18,15 +18,7 @@ const MindMeld: React.FC = () => {
 	const [prevAiWord, setPrevAiWord] = useState<string | null>(null);
 	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string, thoughts: string }[]>([]);
 
-	const timer = useRef<any>(null);
 	const currentAnimation = useRef<any>(null)
-
-	let didInit = false;
-
-	useEffect(() => {
-		gameStateRef.current = gameState;
-	}, [gameState]);
-
 
 	// MARK: Grid Animation
 	// add window size check
@@ -199,7 +191,7 @@ const MindMeld: React.FC = () => {
 	};
 
 	const getThoughts = async (userGuess: string, aiGuess: string): Promise<string> => {
-		let prompt = `Previous rounds: \n\n` + `${prevUserWord} + ${prevAiWord}` + `\n\nThis round user guess: ${userGuess}\nThis round AI guess: ${aiGuess}`
+		let prompt = `Previous rounds: \n\n${prevUserWord} + ${prevAiWord}\n\nThis round user guess: ${userGuess}\nThis round AI guess: ${aiGuess}`
 		const thoughts = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
 			temperature: 0.25,
@@ -323,11 +315,12 @@ const MindMeld: React.FC = () => {
 
 	// Call animateGrid once on component load
 	useEffect(() => {
-		if (!didInit) {
-			animateGrid('idle');
-			didInit = true;
-		}
+		animateGrid('idle');
 	}, []);
+
+	useEffect(() => {
+		gameStateRef.current = gameState;
+	}, [gameState]);
 
 	// MARK: Render
 	return (
