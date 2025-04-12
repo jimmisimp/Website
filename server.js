@@ -5,100 +5,140 @@ const { DataAPIClient, vector } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
 const app = express();
-const port = process.env.PORT || 3001; // Use a port different from React's default (3000)
+const port = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// --- Middleware ---
-app.use(cors({ 
-  origin: 'http://localhost:3000' // Allow requests only from your React app's origin
-}));
-app.use(express.json()); // Parse JSON request bodies
-
-// --- Astra DB Client (Initialize once) ---
+// --- Environment Variable Checks ---
 const astraToken = process.env.REACT_APP_ASTRA_DB_TOKEN;
 const astraEndpoint = process.env.REACT_APP_ASTRA_DB_ID;
+const openaiApiKey = process.env.REACT_APP_OPENAIKEY;
+const frontendOrigin = process.env.FRONTEND_ORIGIN; // Needed for production CORS
 
 if (!astraToken || !astraEndpoint) {
-  console.error("Missing Astra DB credentials in environment variables!");
+  console.error("Missing Astra DB credentials!");
   process.exit(1);
 }
+if (!openaiApiKey) {
+  console.error("Missing OpenAI API key!");
+  process.exit(1);
+}
+if (isProduction && !frontendOrigin) {
+    console.warn("Missing FRONTEND_ORIGIN environment variable for production CORS. Requests might be blocked.");
+    // Allow any origin in production if FRONTEND_ORIGIN is not set (less secure, but avoids blocking)
+    // For better security, set FRONTEND_ORIGIN in your production environment.
+}
 
+// --- Middleware ---
+const corsOrigin = isProduction ? frontendOrigin : 'http://localhost:3000';
+console.log(`Configuring CORS for origin: ${corsOrigin || 'Any (Production without FRONTEND_ORIGIN)'}`);
+app.use(cors({
+  origin: corsOrigin // Dynamically set origin
+}));
+app.use(express.json());
+
+// --- Clients (Initialize once) ---
 const astraClient = new DataAPIClient(astraToken);
 const astraDb = astraClient.db(astraEndpoint);
-let astraTable = null; // Will be initialized later
-
-// --- OpenAI Client (Initialize once) ---
-const openaiApiKey = process.env.REACT_APP_OPENAIKEY;
-if (!openaiApiKey) {
-  console.error("Missing OpenAI API key in environment variables!");
-  process.exit(1);
-}
 const openai = new OpenAI({ apiKey: openaiApiKey });
+
+// --- Global Variable for Astra Table ---
+let astraTable = null;
+const ASTRA_TABLE_NAME = 'round_data';
+const OPENAI_EMBEDDING_DIMENSION = 1536; // text-embedding-3-small dimension
+
+// --- Database Initialization Function ---
+async function initializeDatabase() {
+    try {
+        console.log(`Initializing Astra table "${ASTRA_TABLE_NAME}"...`);
+        const TableSchema = {
+            columns: {
+                id: 'int', // Consider using 'uuid' or 'timeuuid' for better uniqueness
+                user_word: 'text',
+                ai_word: 'text',
+                correct_guess: 'text',
+                vector: { type: 'vector', dimension: OPENAI_EMBEDDING_DIMENSION }, // Use fixed dimension
+            },
+            // If using 'int' as primary key, ensure uniqueness or handle potential collisions
+            primaryKey: 'id',
+        };
+
+        astraTable = await astraDb.createTable(ASTRA_TABLE_NAME, {
+            definition: TableSchema,
+            ifNotExists: true,
+        });
+        console.log(`Table "${ASTRA_TABLE_NAME}" ready.`);
+
+        console.log("Creating vector index (if it doesn't exist)...");
+        // Index name needs to be unique within the keyspace
+        const indexName = `${ASTRA_TABLE_NAME}_vector_idx`;
+        await astraTable.createVectorIndex(indexName, 'vector', {
+            options: { metric: 'cosine' },
+            ifNotExists: true,
+        });
+        console.log(`Vector index "${indexName}" ready.`);
+
+    } catch (error) {
+        console.error("Failed to initialize Astra DB table or index:", error);
+        throw error; // Re-throw to prevent server startup if DB init fails
+    }
+}
+
 
 // --- API Endpoints ---
 
 // POST /api/record-round - Endpoint to receive round data and save to Astra
 app.post('/api/record-round', async (req, res) => {
   console.log("Received request to /api/record-round");
-  const { roundResults } = req.body; // Expecting the entire roundResults array
+  const { roundResults } = req.body;
+
+  if (!astraTable) {
+      console.error("Astra table not initialized. Cannot record round.");
+      return res.status(500).json({ message: 'Database not ready' });
+  }
 
   if (!roundResults || !Array.isArray(roundResults) || roundResults.length === 0) {
     return res.status(400).json({ message: 'Missing or invalid roundResults data' });
   }
 
   try {
-    // --- Embedding Logic (moved from frontend) ---
+    // --- Embedding Logic ---
     const roundsMinusFirst = roundResults.slice(1);
+    // Ensure there's at least one round to process after slicing
+    if (roundsMinusFirst.length === 0) {
+        console.log("No rounds to process after slicing the first one.");
+        // Decide how to handle this: maybe return success, maybe an error?
+        return res.status(200).json({ message: 'No rounds to embed (only initial round received)' });
+    }
+
     const userGuesses = roundsMinusFirst.map(result => result.userGuess);
     const roundsWithCorrect = roundsMinusFirst.map((result, idx) => ({
         ...result,
-        correctGuess: userGuesses[idx+1] // Word the user guessed after this round
+        // Use the user's guess from the *next* round as the 'correct' guess for *this* round
+        correctGuess: userGuesses[idx + 1] || result.userGuess // Fallback for the last actual guess
     }));
 
-    const embeddingInput = roundsWithCorrect.map(result => 
-        `${result.userGuess} + ${result.aiGuess} = ${result.correctGuess || result.userGuess}`
+    // Adjust embedding input logic if needed based on roundsWithCorrect
+    const embeddingInput = roundsWithCorrect.map(result =>
+        `${result.userGuess} + ${result.aiGuess} = ${result.correctGuess}` // Use the calculated correctGuess
     ).join('\n');
-    
+
     console.log("Generating embedding for input:", embeddingInput);
     const embeddingResponse = await openai.embeddings.create({
         model: "text-embedding-3-small",
         input: embeddingInput,
     });
-    const embeddingVector = vector(embeddingResponse.data[0].embedding);
-    console.log("Embedding generated, length:", embeddingVector.length);
+    const embeddingVector = vector(embeddingResponse.data[0].embedding); // Keep using vector() for insertion
+    console.log("Embedding generated, length:", embeddingVector.length); // Should match OPENAI_EMBEDDING_DIMENSION
 
-    // --- Database Logic (moved from frontend) ---
-    if (!astraTable) {
-        // Initialize table on first request (or move to a startup function)
-        console.log("Initializing Astra table...");
-        const TableSchema = {
-            columns: {
-                id: 'int',
-                user_word: 'text',
-                ai_word: 'text',
-                correct_guess: 'text',
-                vector: { type: 'vector', dimension: embeddingVector.length },
-            },
-            primaryKey: 'id',
-        };
-        astraTable = await astraDb.createTable('round_data', 
-            { 
-                definition: TableSchema,
-                ifNotExists: true,
-            }
-        );
-        console.log("Creating vector index...");
-        await astraTable.createVectorIndex('round_data_vector_idx', 'vector', 
-            { options: { metric: 'cosine' }, ifNotExists: true }
-        );
-        console.log("Astra table and index ready.");
-    }
-    
+    // --- Database Logic (Insert Only) ---
+    // Generate unique IDs - simple index might collide across different game sessions
+    const uniqueOffset = Date.now(); // Use timestamp for pseudo-uniqueness in this batch
     const rowsToInsert = roundsWithCorrect.map((result, index) => ({
-        id: index, // Simple ID based on index in this batch
+        id: uniqueOffset + index, // Create a more unique ID
         user_word: result.userGuess,
         ai_word: result.aiGuess,
-        correct_guess: result.correctGuess || result.userGuess, // Use winning guess if last
-        vector: embeddingVector, // Use the same embedding for all rows in this game session
+        correct_guess: result.correctGuess,
+        vector: embeddingVector, // Use the same embedding for all related rows in this game session
     }));
 
     console.log(`Attempting to insert ${rowsToInsert.length} rows...`);
@@ -109,18 +149,29 @@ app.post('/api/record-round', async (req, res) => {
 
   } catch (error) {
     console.error("Error processing /api/record-round:", error);
+    // Check for specific error types if needed
+    if (error.response) {
+        console.error("OpenAI API Error:", error.response.data);
+    } else if (error.errors) { // Astra DB specific errors
+        console.error("Astra DB Error:", error.errors);
+    }
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 });
 
 app.get('/api/get-rounds', async (req, res) => {
-	const { word } = req.query; // Get word from query parameters
+	const { word } = req.query;
+
+    if (!astraTable) {
+        console.error("Astra table not initialized. Cannot get rounds.");
+        return res.status(500).json({ message: 'Database not ready' });
+    }
 
 	if (!word) {
 		return res.status(400).json({ message: 'Missing "word" query parameter' });
 	}
 
-	astraTable = await astraDb.table('round_data');
+	// No need to re-initialize astraTable here, use the global one
 
 	try {
 		// 1. Generate embedding for the input word
@@ -129,15 +180,13 @@ app.get('/api/get-rounds', async (req, res) => {
 				model: "text-embedding-3-small",
 				input: word,
 		});
-		// const searchVector = vector(embeddingResponse.data[0].embedding); // Don't wrap for sorting
-		const rawEmbedding = embeddingResponse.data[0].embedding;
+		const rawEmbedding = embeddingResponse.data[0].embedding; // Use raw array for sorting
 		console.log("Search vector generated, length:", rawEmbedding.length);
 
-		// 2. Perform vector search
+		// 2. Perform vector search using the initialized astraTable
 		console.log("Performing vector search...");
 		const cursor = await astraTable.find({}, {
-			// sort: { $vector: searchVector }, // Pass the raw embedding array directly
-			sort: { vector: rawEmbedding },
+			sort: { vector: rawEmbedding }, // Pass the raw embedding array directly
 			includeSimilarity: true,
 			limit: 3 // Limit to top 3 results
 		});
@@ -146,7 +195,7 @@ app.get('/api/get-rounds', async (req, res) => {
 		const topGuesses = [];
 		const similarity = [];
 		for await (const row of cursor) {
-			console.log("Found match:", row); // Log the full row for debugging
+			console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correct_guess);
 			if (row.correct_guess) {
 				topGuesses.push(row.correct_guess);
 			}
@@ -157,15 +206,33 @@ app.get('/api/get-rounds', async (req, res) => {
 		console.log("Top guesses found:", topGuesses);
 
 		// 4. Return results
-		res.status(200).json({ topGuesses, similarity }); // Return the array of guesses
+		res.status(200).json({ topGuesses, similarity });
 
 	} catch (error) {
 		console.error("Error processing /api/get-rounds:", error);
+        if (error.response) {
+            console.error("OpenAI API Error:", error.response.data);
+        } else if (error.errors) { // Astra DB specific errors
+            console.error("Astra DB Error:", error.errors);
+        }
 		res.status(500).json({ message: 'Internal server error', error: error.message });
 	}
 });
 
 // --- Start Server ---
-app.listen(port, () => {
-  console.log(`Backend server listening on http://localhost:${port}`);
-}); 
+async function startServer() {
+    try {
+        await initializeDatabase(); // Initialize DB before starting listener
+
+        const host = isProduction ? '0.0.0.0' : 'localhost';
+        app.listen(port, host, () => {
+            console.log(`Backend server listening on http://${host}:${port}`);
+            console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
+        });
+    } catch (error) {
+        console.error("Server failed to start:", error);
+        process.exit(1); // Exit if server cannot start (e.g., DB init failed)
+    }
+}
+
+startServer(); // Execute the async function to start the server 

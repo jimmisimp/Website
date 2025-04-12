@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OpenAI from "openai";
-import anime from 'animejs';
+import { animate, createTimer, stagger, utils } from 'animejs';
 
 const openai = new OpenAI({ apiKey: process.env.REACT_APP_OPENAIKEY, dangerouslyAllowBrowser: true });
 
@@ -19,29 +19,59 @@ const MindMeld: React.FC = () => {
 	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string, thoughts: string }[]>([]);
 
 	const currentAnimation = useRef<any>(null)
+	const timer = useRef<any>(null)
+
+	const $timeSec = utils.$('.time-vals')[0]
+	const $timeMil = utils.$('.time_secs')[0]
+
+	// Effect for the timer
+	useEffect(() => {
+		timer.current?.revert()
+		timer.current = createTimer({
+			duration: 20000,
+			reversed: true,
+			frameRate: 16,
+			onUpdate: self => {
+				if (gameState === 'awaitingUserGuess' && round > 1) {
+					$timeSec.innerHTML = (self._iterationTime).toString().substring(0, self._iterationTime.toString().length - 3).padStart(2, '0')
+					$timeMil.innerHTML = (self._iterationTime).toString().substring(self._iterationTime.toString().length - 3, self._iterationTime.toString().length - 1).padStart(2, '0')
+					if (self._iterationTime <= 5000) {
+						utils.$('#timerDisplay')[0].classList.add('time-running-out')
+					}
+					else {
+						utils.$('#timerDisplay')[0].classList.remove('time-running-out')
+					}
+				}
+			},
+			onComplete: () => {
+				if (gameState === 'awaitingUserGuess' && round > 1) {
+					setGameState('roundLost');
+					setGameMessages(prev => [...prev, `<span class='prev-words prev-words-user'>${prevUserWord}</span><span class='prev-words prev-words-ai'>${prevAiWord}</span>`])
+					animateGrid('roundLost')
+				}
+			}
+		})
+	}, [gameState, round, $timeSec, $timeMil]);
 
 	// MARK: Grid Animation
-	// add window size check
-	// const grid = [24, 24]
-	// Responsive grid size based on window width
 	const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
-	
+
 	useEffect(() => {
 		const handleResize = () => {
 			setWindowWidth(window.innerWidth);
 		};
-		
+
 		window.addEventListener('resize', handleResize);
 		return () => {
 			window.removeEventListener('resize', handleResize);
 		};
 	}, []);
-	
+
 	const grid = windowWidth < 800 ? [24, 24] : [32, 18];
 
 	function animateGrid(stateAtStart: GameState = 'awaitingUserGuess') {
-		const from = anime.random(0, grid[0] * grid[1]);
-		const waveDots = document.querySelectorAll('.wave-dot');
+		const from = utils.random(0, grid[0] * grid[1]);
+		const waveDots = utils.$('.wave-dot');
 		if (waveDots.length === 0) return;
 
 		let animationDelay = 0
@@ -50,29 +80,6 @@ const MindMeld: React.FC = () => {
 		let animationScale = [1, 1]
 		let animationColor = ['#4e4e9e', '#717aff']
 		let currentScale = 1;
-
-		try {
-			const firstDot = waveDots[0] as HTMLElement;
-			const computedStyle = window.getComputedStyle(firstDot);
-			const transformMatrix = computedStyle.transform || computedStyle.webkitTransform;
-			if (transformMatrix && transformMatrix !== 'none') {
-				const matrixValues = transformMatrix.match(/matrix.*\((.+)\)/);
-				if (matrixValues && matrixValues[1]) {
-					const values = matrixValues[1].split(',').map(parseFloat);
-					currentScale = values[0];
-				}
-			} else {
-				const scaleAttr = firstDot.style.transform.match(/scale\(([^)]+)\)/);
-				if (scaleAttr && scaleAttr[1]) {
-					currentScale = parseFloat(scaleAttr[1]);
-				}
-			}
-			currentScale = isNaN(currentScale) ? 1 : currentScale;
-
-		} catch (e) {
-			console.error("Could not get current scale:", e);
-			currentScale = 1;
-		}
 
 		switch (stateAtStart) {
 			case 'idle':
@@ -105,28 +112,28 @@ const MindMeld: React.FC = () => {
 				break
 		}
 		currentAnimation.current?.pause();
-		currentAnimation.current = anime({
-			targets: waveDots,
+		currentAnimation.current = animate(waveDots, {
 			translateX: [
-				{ value: anime.stagger(animationTranslate, { grid, from, axis: 'x' }), duration: animationDuration / 2 + 300, easing: 'easeInOutSine' },
-				{ value: 0, duration: animationDuration / 2 - 300, easing: 'easeInCirc' }
+				{ to: stagger(animationTranslate, { grid, from, axis: 'x' }), ease: 'inOutSine' },
+				{ to: 0, ease: 'inOutSine' }
 			],
 			translateY: [
-				{ value: anime.stagger(animationTranslate, { grid, from, axis: 'y' }), duration: animationDuration / 2 + 300, easing: 'easeInOutSine' },
-				{ value: 0, duration: animationDuration / 2 - 300, easing: 'easeInCirc' }
+				{ to: stagger(animationTranslate, { grid, from, axis: 'y' }), ease: 'inOutSine' },
+				{ to: 0, ease: 'inOutSine' }
 			],
 			scale: [
-				{ value: animationScale, duration: animationDuration / 2 + 300, easing: 'easeInOutSine' },
-				{ value: 1, duration: animationDuration / 2 - 300, easing: 'easeInCirc' }
+				{ to: animationScale, ease: 'inOutSine' },
+				{ to: 1, ease: 'inOutSine' }
 			],
 			backgroundColor: [
-				{ value: animationColor, duration: animationDuration / 2 + 300, easing: 'easeInOutSine' },
-				{ value: animationColor[0], duration: animationDuration / 2 - 300, easing: 'easeInCirc' }
+				{ to: animationColor, ease: 'inOutSine' },
+				{ to: animationColor[0], ease: 'inOutSine' }
 			],
-			delay: anime.stagger(animationDelay, { grid, from }),
+			delay: stagger(animationDelay, { grid, from }),
 			duration: animationDuration,
-			easing: 'linear',
-			complete: () => {
+			frameRate: 60,
+			ease: 'linear',
+			onComplete: () => {
 				if (gameStateRef.current !== 'roundLost' && gameStateRef.current !== 'roundWon') {
 					animateGrid(gameStateRef.current)
 				}
