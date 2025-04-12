@@ -4,6 +4,9 @@ import { animate, createTimer, stagger, utils } from 'animejs';
 
 const openai = new OpenAI({ apiKey: process.env.REACT_APP_OPENAIKEY, dangerouslyAllowBrowser: true });
 
+// --- Configuration ---
+const API_BASE_URL = '/api';
+
 type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'roundWon' | 'roundLost' | 'resetting';
 
 
@@ -151,7 +154,7 @@ const MindMeld: React.FC = () => {
 		let agentPrompt = ''
 		if (previousUserWord && previousAiWord) {
 			const searchWords = `${previousUserWord} + ${previousAiWord}`
-			const response = await fetch(`http://localhost:3001/api/get-rounds?word=${searchWords}`);
+			const response = await fetch(`${API_BASE_URL}/get-rounds?word=${encodeURIComponent(searchWords)}`);
 
 			const data: { topGuesses: string[], similarity: number[] } = await response.json();
 			console.log(data);
@@ -163,10 +166,11 @@ const MindMeld: React.FC = () => {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
 			const randNum = Math.floor(Math.random() * 5) + 2
 			agentPrompt = `\n\nThis is the first round. Create your word. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least ${randNum - 2} other letters from the following: '${seed.substring(2)}' `
+			console.log(`Seed = ${seed} (${randNum})`)
 		}
 
 		prompt += `\n\n# *STRICT RULE: Your response must contain only a single word, no other text. Never use any previous round's words.*`
-		console.log(agentPrompt)
+
 
 		// Generate guess
 		const guess = await openai.chat.completions.create({
@@ -177,10 +181,10 @@ const MindMeld: React.FC = () => {
 			messages: [{ role: "system", content: prompt }, { role: "system", content: agentPrompt }],
 		});
 		const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned'
-		console.log(`AI guessed: ${aiGuess}`);
 		if (checkIfPreviouslyUsed(aiGuess)) {
-			console.log(`Already used ${aiGuess} ${warn}`)
-			return await generateAiGuess(previousUserWord, previousAiWord, `${aiGuess},${warn}`)
+			warn = warn.includes(aiGuess) ? warn : `${aiGuess},${warn}`
+			console.warn(`Already used: ${aiGuess}`)
+			return await generateAiGuess(previousUserWord, previousAiWord, warn)
 		}
 		return aiGuess;
 	};
@@ -198,7 +202,7 @@ const MindMeld: React.FC = () => {
 	};
 
 	const getThoughts = async (userGuess: string, aiGuess: string): Promise<string> => {
-		let prompt = `Previous rounds: \n\n${prevUserWord} + ${prevAiWord}\n\nThis round user guess: ${userGuess}\nThis round AI guess: ${aiGuess}`
+		let prompt = `Previous rounds: \n\n${prevUserWord} + ${prevAiWord}\n\nThis round user guess: ${userGuess}`
 		const thoughts = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
 			temperature: 0.25,
@@ -220,7 +224,6 @@ const MindMeld: React.FC = () => {
 		setGameMessages(['Enter any word to begin.']);
 		setRoundResults([])
 		setUserInput('');
-		console.log('Starting Mind Meld game...');
 		animateGrid()
 	};
 
@@ -292,9 +295,8 @@ const MindMeld: React.FC = () => {
 
 	// MARK: Database -> Now handled by backend
 	const recordRoundToDatabase = async () => {
-		console.log("Sending round results to backend API...");
 		try {
-			const response = await fetch('http://localhost:3001/api/record-round', {
+			const response = await fetch(`${API_BASE_URL}/record-round`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -382,7 +384,7 @@ const MindMeld: React.FC = () => {
 						{round > 1 && prevUserWord && prevAiWord && (
 							<p className="prompt">
 								Guesses were <span className='guess-words'>{prevUserWord}</span> and <span className='guess-words'>{prevAiWord}</span>
-								<p className='timer'>AI is thinking...</p>
+								<span className='timer'>AI is thinking...</span>
 							</p>
 						)}
 						<div className='input-group'>
