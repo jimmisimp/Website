@@ -1,0 +1,17 @@
+[build]
+  # Your usual build command for the React app (e.g., npm run build, yarn build)
+  command = "CI=false npm run build"
+  # The directory your build command outputs the static site to (usually 'build' or 'dist')
+  publish = "build"
+
+# Declare the functions directory
+[functions]
+  directory = "netlify/functions"
+  # Optional: Specify Node.js version if needed, e.g., node_bundler = "esbuild", nodejs_version = "18"
+
+# Optional but recommended: Redirects for cleaner API URLs
+# This makes your frontend call /api/record-round instead of /.netlify/functions/record-round
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200 # Use 200 for function rewrites
