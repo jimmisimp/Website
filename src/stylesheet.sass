@@ -16,6 +16,7 @@ $font-sans: 'Assistant', Arial, Helvetica, sans-serif
 $font-block: 'Vina Sans', Arial, Helvetica, sans-serif
 $font-mono: 'Anonymous Pro', Courier, monospace
 $color-red-1: #ff4c4c
+$color-green-1: #11ce11
 $color-indigo-0: #989fff
 $color-indigo-1: #717aff
 $color-indigo-2: #4e4e9e
@@ -138,6 +139,10 @@ input
     &:disabled
         color: $text-down
         background-color: $material-inset
+    &.error
+        outline: 2px solid $color-red-1
+        color: $color-red-1
+
 
 .color-results
     display: flex
@@ -261,7 +266,7 @@ input
                             border-radius: 0px 4px 4px 0px
                             color: $color-indigo-0
                         &.prev-words-match
-                            background-color: $color-indigo-0
+                            background-color: $color-green-1
                             color: $color-indigo-3
                             border-radius: 4px
 
