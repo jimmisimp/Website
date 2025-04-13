@@ -19,10 +19,13 @@ const MindMeld: React.FC = () => {
 
 	const [prevUserWord, setPrevUserWord] = useState<string | null>(null);
 	const [prevAiWord, setPrevAiWord] = useState<string | null>(null);
-	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string, thoughts: string }[]>([]);
+	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string }[]>([]);
+	const [currentAiGuess, setCurrentAiGuess] = useState<string>('');
+	const [isGeneratingAiGuess, setIsGeneratingAiGuess] = useState<boolean>(false);
 
 	const currentAnimation = useRef<any>(null)
 	const timer = useRef<any>(null)
+	const isStarted = useRef<boolean>(false)
 
 	const $timeSec = utils.$('.time-vals')[0]
 	const $timeMil = utils.$('.time_secs')[0]
@@ -31,7 +34,7 @@ const MindMeld: React.FC = () => {
 	useEffect(() => {
 		timer.current?.revert()
 		timer.current = createTimer({
-			duration: 20000,
+			duration: 25000,
 			reversed: true,
 			frameRate: 16,
 			onUpdate: self => {
@@ -82,35 +85,34 @@ const MindMeld: React.FC = () => {
 		let animationTranslate = '0rem'
 		let animationScale = [1, 1]
 		let animationColor = ['#4e4e9e', '#717aff']
-		let currentScale = 1;
 
 		switch (stateAtStart) {
 			case 'idle':
 				animationDelay = 200
 				animationDuration = 4000
 				animationTranslate = '0.15rem'
-				animationScale = [currentScale, 1.25]
+				animationScale = [1, 1.25]
 				animationColor = ['#4e4e9e', '#5e5eae']
 				break
 			case 'roundWon':
 				animationDelay = 15
 				animationDuration = 2000
 				animationTranslate = '1rem'
-				animationScale = [currentScale, 3]
-				animationColor = ['#4e4e9e', '#717aff']
+				animationScale = [1, 3]
+				animationColor = ['#4e4e9e', '#11ce11']
 				break
 			case 'roundLost':
 				animationDelay = 200
 				animationDuration = 4000
 				animationTranslate = '0.15rem'
-				animationScale = [currentScale, 0.66]
+				animationScale = [1, 0.66]
 				animationColor = ['#4e4e9e', '#ff4c4c']
 				break
 			default:
 				animationDelay = 20
 				animationDuration = 1200
 				animationTranslate = '0.25rem'
-				animationScale = [currentScale, 2]
+				animationScale = [1, 2]
 				animationColor = ['#4e4e9e', '#5e5eae']
 				break
 		}
@@ -125,7 +127,7 @@ const MindMeld: React.FC = () => {
 				{ to: 0, ease: 'inOutSine' }
 			],
 			scale: [
-				{ to: animationScale, ease: 'inOutSine' },
+				{ from: 1, to: animationScale, ease: 'inOutSine' },
 				{ to: 1, ease: 'inOutSine' }
 			],
 			backgroundColor: [
@@ -157,16 +159,15 @@ const MindMeld: React.FC = () => {
 			const response = await fetch(`${API_BASE_URL}/get-rounds?word=${encodeURIComponent(searchWords)}`);
 
 			const data: { topGuesses: string[], similarity: number[] } = await response.json();
-			console.log(data);
 
 			prompt += `\n\nWhat word will the user likely guess next, based on the words '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
-			agentPrompt = roundResults.length > 0 ? `\n\n*Top 3 most likely based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')}* \n\nPrevious round analysis: \n\n${roundResults.slice(-3, -1).map(result => `Why the user might have chosen ${result.userGuess}: ${result.thoughts}`).join('\n\n')} ` : ''
+			agentPrompt = roundResults.length > 0 ? `\n\n*Top 3 most likely based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')}* ` : ''
 		}
 		else {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
 			const randNum = Math.floor(Math.random() * 5) + 2
-			agentPrompt = `\n\nThis is the first round. Create your word. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least ${randNum - 2} other letters from the following: '${seed.substring(2)}' `
-			console.log(`Seed = ${seed} (${randNum})`)
+			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least ${randNum - 2} other letters from the following: '${seed.substring(2)}' `
+			console.log({seed: `${seed}`, randNum: `${randNum}`})
 		}
 
 		prompt += `\n\n# *STRICT RULE: Your response must contain only a single word, no other text. Never use any previous round's words.*`
@@ -195,29 +196,19 @@ const MindMeld: React.FC = () => {
 			model: "gpt-4o-mini",
 			temperature: 0.0,
 			max_tokens: 5,
-			messages: [{ role: "system", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or forms may be considered the same (e.g. 'running' and 'runner', 'jumping' and 'jump', etc.). Return only `true` or `false`." }, { role: "user", content: prompt }],
+			messages: [{ role: "system", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." }, { role: "user", content: prompt }],
 		});
 
 		return guess.choices[0].message.content === 'true';
 	};
 
-	const getThoughts = async (userGuess: string, aiGuess: string): Promise<string> => {
-		let prompt = `Previous rounds: \n\n${prevUserWord} + ${prevAiWord}\n\nThis round user guess: ${userGuess}`
-		const thoughts = await openai.chat.completions.create({
-			model: "gpt-4o-mini",
-			temperature: 0.25,
-			max_tokens: 50,
-			top_p: 0.95,
-			messages: [{ role: "system", content: "Both players are attempting to guess the same word. Before each guess, they see the previous round's guesses, and attempt again to match. Generate your thoughts on why the User choose the word they did this round. Think of clever connections or tactics they may be using. Return only the thoughts, no other text. Your thoughts should be under 24 words." }, { role: "assistant", content: prompt }],
-		});
-		console.log(prompt)
-		console.log(thoughts.choices[0].message.content);
-		return thoughts.choices[0].message.content || 'ERROR: No thoughts returned';
-	};
-
 	// MARK: Game Functions
-	const handleStartGame = () => {
+	const handleStartGame = async () => {
+		console.log('Starting game')
 		setRound(1);
+		setGameState('resetting');
+		let newAiGuess = await generateAiGuess(null, null);
+		setCurrentAiGuess(newAiGuess.toLowerCase());
 		setGameState('awaitingUserGuess');
 		setPrevUserWord(null);
 		setPrevAiWord(null);
@@ -229,60 +220,76 @@ const MindMeld: React.FC = () => {
 
 	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setUserInput(event.target.value.toLowerCase());
+		if (event.target.classList.contains('error')) {
+			event.target.classList.remove('error')
+			utils.$('.error-message')[0].classList.add('hidden')
+		}
 	};
 
 	const checkIfPreviouslyUsed = (guess: string) => {
 		guess = guess.toLowerCase()
-		if (roundResults.some(result => result.userGuess === guess || result.aiGuess === guess)) {
-			return true;
-		}
-		return false;
+		const roundWords = [roundResults.map(result => result.userGuess), roundResults.map(result => result.aiGuess)].flat()
+		const suffixes = ['s', 'es', 'ed', 'ing', 'ly', 'ate', 'ion', 'r', 'red', 'ring', 'led'];
+		const isExcluded = roundWords.some(w => {
+			if (guess === w || w === guess) return true;
+			for (const suffix of suffixes) {
+				if (guess === w + suffix || w === guess + suffix) return true;
+			}
+			return false;
+		});
+		return isExcluded;
 	}
 
 	// MARK: Handle Guess
 	const handleSubmitGuess = async () => {
 		if (gameState !== 'awaitingUserGuess' || !userInput.trim()) return;
+		setGameState('resetting');
 
 		if (checkIfPreviouslyUsed(userInput.trim().toLowerCase())) {
-			setGameMessages(prev => [...prev, "You may not guess a previously guessed word. Please try again."]);
 			setGameState('awaitingUserGuess');
+			const input = utils.$('#user-input')[0]
+			input.classList.add('error')
+			utils.$('.error-message')[0].classList.remove('hidden')
 			return;
 		}
-
 		const currentUserGuess = userInput.trim().toLowerCase();
 		setUserInput('');
-		setGameState('waitingForAI');
+
+		while (isGeneratingAiGuess) {
+			setGameState('waitingForAI');
+		}
 
 		try {
-			let currentAiGuess = await generateAiGuess(prevUserWord, prevAiWord);
-			currentAiGuess = currentAiGuess.toLowerCase();
-
-			const turnMessages = roundResults.length > 0 ? roundResults.map(result => `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`) : ['Words chosen at random.'];
+			setIsGeneratingAiGuess(true);
+			const turnMessages = roundResults.length > 0 ? roundResults.map(result => `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`) : ['First round.'];
 
 			if (await checkForMatch(currentUserGuess, currentAiGuess)) {
 				setGameMessages(turnMessages.concat(`<span class='prev-words prev-words-match'>${currentUserGuess}</span>`));
 				setGameState('roundWon');
 				animateGrid('roundWon')
-				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess, thoughts: 'Winning round!' }]);
-				await recordRoundToDatabase();
+				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess }]);
+				await recordRoundToDatabase(currentUserGuess);
 			} else {
 				// Append to previous words
-				let roundThoughts = 'First round. Words chosen at random.'
-				if (round > 1) {
-					roundThoughts = await getThoughts(currentUserGuess, currentAiGuess);
-				}
-				setGameState('resetting');
-				setGameMessages(turnMessages);
-				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess, thoughts: roundThoughts }]);
+				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess }]);
 				setPrevUserWord(currentUserGuess);
 				setPrevAiWord(currentAiGuess);
+				
+				setGameMessages(turnMessages);
 				setRound(prev => prev + 1);
+				
+				setGameState('resetting');
 				setGameState('awaitingUserGuess');
+				
+				let newAiGuess = await new Promise<string>(resolve => generateAiGuess(currentUserGuess, currentAiGuess).then(resolve));
+				setCurrentAiGuess(newAiGuess.toLowerCase());
 			}
 		} catch (error) {
 			console.error("Error getting AI guess:", error);
 			setGameMessages(prev => [...prev, "Error communicating with AI. Please try again."]);
 			setGameState('awaitingUserGuess');
+		} finally {
+			setIsGeneratingAiGuess(false);
 		}
 	};
 
@@ -294,14 +301,14 @@ const MindMeld: React.FC = () => {
 
 
 	// MARK: Database -> Now handled by backend
-	const recordRoundToDatabase = async () => {
+	const recordRoundToDatabase = async (finalCorrectGuess: string) => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/record-round`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ roundResults: roundResults })
+				body: JSON.stringify({ roundResults: roundResults, finalCorrectGuess: finalCorrectGuess })
 			});
 
 			if (!response.ok) {
@@ -311,11 +318,11 @@ const MindMeld: React.FC = () => {
 				} catch (parseError) {
 					throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
 				}
-				throw new Error(`Backend error: ${errorData.message || response.statusText}`);
+				throw new Error(`Database error: ${errorData.message || response.statusText}`);
 			}
 
 			const result = await response.json();
-			console.log("Backend response:", result.message);
+			console.log("Database:", result.message);
 
 		} catch (error) {
 			console.error("Error sending data to backend API:", error);
@@ -324,7 +331,10 @@ const MindMeld: React.FC = () => {
 
 	// Call animateGrid once on component load
 	useEffect(() => {
-		animateGrid('idle');
+		if (!isStarted.current) {
+			isStarted.current = true;
+			animateGrid('idle');
+		}
 	}, []);
 
 	useEffect(() => {
@@ -346,7 +356,7 @@ const MindMeld: React.FC = () => {
 					</span>
 				</div>
 
-				<div className='timer' hidden={gameState !== 'awaitingUserGuess' || round < 2}>You have <span id="timerDisplay"><span className='time-vals'>20</span>:<span className='time_secs time-vals'>00</span></span> left to guess.</div>
+				<div className='timer' hidden={gameState !== 'awaitingUserGuess' || round < 2}>You have <span id="timerDisplay"><span className='time-vals'>25</span>:<span className='time_secs time-vals'>00</span></span> left to guess.</div>
 
 				{gameState === 'idle' && (
 					<div className="game-controls">
@@ -365,6 +375,7 @@ const MindMeld: React.FC = () => {
 						)}
 						<div className='input-group'>
 							<input
+								id="user-input"
 								type="text"
 								value={userInput}
 								onChange={handleInputChange}
@@ -372,6 +383,7 @@ const MindMeld: React.FC = () => {
 								placeholder={round === 1 ? "Enter a word" : "Enter your guess"}
 								autoFocus
 							/>
+							<span hidden className='error-message'>You may not guess a previously guessed word. Please try again.</span>
 							<button className='main-button' onClick={handleSubmitGuess} disabled={!userInput.trim()}>
 								Guess
 							</button>
@@ -397,6 +409,12 @@ const MindMeld: React.FC = () => {
 								Waiting for AI...
 							</button>
 						</div>
+					</div>
+				)}
+
+				{gameState === 'resetting' && (
+					<div className="game-controls">
+						<p className="prompt">Loading round...</p>
 					</div>
 				)}
 

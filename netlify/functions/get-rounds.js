@@ -60,18 +60,23 @@ exports.handler = async (event, context) => {
     const cursor = await astraTable.find({}, {
         sort: { vector: rawEmbedding },
         includeSimilarity: true,
-        limit: 3
+        limit: 5
     });
 
-    // 3. Extract correct_guess from results
+    // 3. Extract correctGuess from results
     const topGuesses = [];
     const similarity = [];
+    const currentWords = word.split('+').map(w => w.trim());
+
     for await (const row of cursor) {
-        console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correct_guess);
-        if (row.correct_guess) {
-            topGuesses.push(row.correct_guess);
-        }
-        if (row['$similarity']) {
+        console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correctGuess);
+        const guess = row.correctGuess;
+        // Check if the guess matches any word in currentWords or its simple plural/variant forms
+        const isExcluded = currentWords.some(w => guess === w || guess === w + 's' || guess === w + 'es' || guess === w + 'ed' || guess === w + 'ing' || guess === w + 'ly' || guess === w + 'r');
+        console.log(`Filtering ${guess}: ${isExcluded}`);
+
+        if (!isExcluded) {
+            topGuesses.push(guess);
             similarity.push(row['$similarity']);
         }
     }

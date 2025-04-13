@@ -1,5 +1,5 @@
 // netlify/functions/record-round.js
-// require('dotenv').config(); // No longer needed in deployed function
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }); // Load .env from root for local testing
 const { DataAPIClient, vector } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
@@ -31,9 +31,10 @@ async function initializeDatabaseIfNeeded(db) {
 			definition: {
 				columns: {
 					id: 'int',
-					user_word: 'text',
-					ai_word: 'text',
-					correct_guess: 'text',
+					roundNumber: 'int',
+					userWord: 'text',
+					aiWord: 'text',
+					correctGuess: 'text',
 					vector: { type: 'vector', dimension: OPENAI_EMBEDDING_DIMENSION },
 				},
 				primaryKey: 'id',
@@ -64,7 +65,19 @@ exports.handler = async (event, context) => {
 	}
 
 	try {
-		const { roundResults } = JSON.parse(event.body || '{}'); // Parse body
+		// Ensure event.body is parsed
+		let requestBody;
+		try {
+			requestBody = JSON.parse(event.body || '{}');
+		} catch (parseError) {
+			console.error("Error parsing request body:", parseError);
+			return {
+				statusCode: 400,
+				body: JSON.stringify({ message: 'Invalid JSON in request body' })
+			};
+		}
+
+		const { roundResults, finalCorrectGuess } = requestBody;
 
 		if (!roundResults || !Array.isArray(roundResults) || roundResults.length === 0) {
 			return {
@@ -79,54 +92,125 @@ exports.handler = async (event, context) => {
 		}
 
 
-		// --- Embedding Logic ---
-		const roundsMinusFirst = roundResults.slice(1);
-		if (roundsMinusFirst.length === 0) {
+		// --- Embedding & Database Logic (Row by Row) ---
+
+		// Determine correct guesses. Assumes roundResults are ordered.
+		// The final correct guess needs special handling - passed via `finalCorrectGuess`.
+		const roundsWithCorrect = roundResults.map((result, idx) => {
+			let correctGuessForRow = '';
+			if (idx < roundResults.length - 1) {
+				correctGuessForRow = roundResults[idx + 1]?.userGuess || ''; // Use next user guess
+			} else {
+				correctGuessForRow = finalCorrectGuess || ''
+			}
+			return {
+				...result, // Contains userGuess, aiGuess, potentially roundNumber
+				correctGuess: correctGuessForRow,
+				roundNumber: result.roundNumber !== undefined ? parseInt(result.roundNumber, 10) : idx + 1 // Use provided or derive
+			};
+		}).filter(r => !isNaN(r.roundNumber)); // Filter out rounds where roundNumber is invalid
+
+
+		if (roundsWithCorrect.length === 0) {
 			return {
 				statusCode: 200,
-				body: JSON.stringify({ message: 'No rounds to embed (only initial round received)' })
+				body: JSON.stringify({ message: 'No valid rounds to process after calculating correct guesses.' })
 			};
 		}
 
-		// TODO: Fix final round not using final correctGuess (should be the winning word, needs to be included in post body)
-		const userGuesses = roundsMinusFirst.map(result => result.userGuess);
-		const roundsWithCorrect = roundsMinusFirst.map((result, idx) => ({
-			...result,
-			correctGuess: userGuesses[idx + 1] || result.userGuess
-		}));
-
-		const embeddingInput = roundsWithCorrect.map(result =>
-			`${result.userGuess} + ${result.aiGuess} = ${result.correctGuess}`
-		).join('\n');
-
-		const embeddingResponse = await openai.embeddings.create({
-			model: "text-embedding-3-small",
-			input: embeddingInput,
-		});
-		const embeddingVector = vector(embeddingResponse.data[0].embedding);
-
-		// --- Database Logic (Insert Only) ---
-		const rowsToInsert = roundsWithCorrect.map((result, index) => ({
-			id:  index,
-			user_word: result.userGuess,
-			ai_word: result.aiGuess,
-			correct_guess: result.correctGuess,
-			vector: embeddingVector,
-		}));
-
+		// --- Fetch Max ID ---
+		let nextId = 0;
 		try {
-			await astraTable.insertMany(rowsToInsert);
-		} catch (error) {
-			console.error("Error inserting rows into Astra DB:", error);
-			return {
-				statusCode: 500,
-				body: JSON.stringify({ message: 'Error inserting rows into Astra DB' }),
-			};
+			console.log("Finding max existing ID...");
+			const maxIdResult = await astraTable.findOne({}, { projection: { 'id': 1 }, sort: { 'id': -1 } });
+			if (maxIdResult && typeof maxIdResult.id === 'number') {
+				nextId = maxIdResult.id + 1;
+				console.log(`Found max ID ${maxIdResult.id}. Starting next ID from ${nextId}`);
+			} else {
+				console.log("No existing data found or couldn't retrieve max ID. Starting ID from 0.");
+			}
+		} catch (findError) {
+			console.warn("Could not determine max existing ID. Starting from 0. Error:", findError);
+		}
+
+		const rowsToInsert = [];
+		console.log(`Processing ${roundsWithCorrect.length} rounds for embedding and insertion...`);
+
+		for (const round of roundsWithCorrect) {
+			const currentId = nextId; // ID for this specific round
+
+			// Validate data needed for embedding
+			if (!round.userGuess || !round.aiGuess || !round.correctGuess) {
+				console.warn(`Skipping round number ${round.roundNumber} due to missing guess data: ${JSON.stringify(round)}`);
+				continue;
+			}
+
+			const embeddingInput = `${round.userGuess} + ${round.aiGuess} = ${round.correctGuess}`;
+
+			try {
+				// Generate embedding for this specific round
+				const embeddingResponse = await openai.embeddings.create({
+					model: "text-embedding-3-small",
+					input: embeddingInput,
+				});
+
+				if (!embeddingResponse.data || !embeddingResponse.data[0] || !embeddingResponse.data[0].embedding) {
+					console.error(`Failed to get valid embedding structure for round number ${round.roundNumber}: ${JSON.stringify(round)}`, embeddingResponse);
+					continue; // Skip row if embedding structure is invalid
+				}
+				const embeddingVector = vector(embeddingResponse.data[0].embedding);
+
+				// Prepare row using camelCase keys
+				rowsToInsert.push({
+					id: currentId,
+					roundNumber: round.roundNumber,
+					userWord: round.userGuess, // Ensure consistent naming
+					aiWord: round.aiGuess,     // Ensure consistent naming
+					correctGuess: round.correctGuess, // Ensure consistent naming
+					vector: embeddingVector,
+				});
+				nextId++; // Increment ID for the next round
+
+			} catch (embeddingError) {
+				console.error(`Failed to generate embedding for round number ${round.roundNumber} (ID ${currentId}):`, embeddingError);
+				// Optionally skip this round or halt execution
+				continue;
+			}
+		}
+
+		// --- Batch Insert into Database ---
+		if (rowsToInsert.length > 0) {
+			console.log(`Attempting to insert ${rowsToInsert.length} prepared rows into Astra DB...`);
+			try {
+				const batchSize = 20; // Astra DB recommended batch size
+				let insertedCount = 0;
+				for (let i = 0; i < rowsToInsert.length; i += batchSize) {
+					const batch = rowsToInsert.slice(i, i + batchSize);
+					console.log(`Inserting batch ${Math.floor(i / batchSize) + 1} (${batch.length} rows)...`);
+					const insertResult = await astraTable.insertMany(batch);
+					insertedCount += batch.length; // Assume success if no error
+					console.log(`Batch ${Math.floor(i / batchSize) + 1} inserted.`);
+				}
+				console.log(`Successfully inserted ${insertedCount} rows in total.`);
+
+			} catch (dbError) {
+				console.error("Error inserting rows into Astra DB:", dbError);
+				if (dbError.errors) {
+					console.error("Astra DB Error Details:", JSON.stringify(dbError.errors, null, 2));
+				}
+				// Return 500 on database insertion failure
+				return {
+					statusCode: 500,
+					body: JSON.stringify({ message: 'Error inserting rows into Astra DB' }),
+				};
+			}
+		} else {
+			console.log("No valid rows were prepared for insertion.");
 		}
 
 		return {
 			statusCode: 200,
-			body: JSON.stringify({ message: 'Round recorded successfully' }),
+			body: JSON.stringify({ message: `Learning ${rowsToInsert.length} correct guesses: ${JSON.stringify(rowsToInsert.map(r => `${r.userWord} | ${r.aiWord} => ${r.correctGuess}`))}` }),
 			headers: {
 				'Content-Type': 'application/json',
 				'Access-Control-Allow-Origin': '*',
