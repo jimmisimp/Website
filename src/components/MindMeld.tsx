@@ -70,7 +70,7 @@ const MindMeld: React.FC = () => {
 		};
 	}, []);
 
-	const grid = windowWidth < 800 ? [24, 24] : [32, 18];
+	const grid = windowWidth < 800 ? [14, 24] : [32, 18];
 
 	function animateGrid(stateAtStart: GameState = 'awaitingUserGuess') {
 		const from = utils.random(0, grid[0] * grid[1]);
@@ -384,7 +384,6 @@ const MindMeld: React.FC = () => {
 						{round > 1 && prevUserWord && prevAiWord && (
 							<p className="prompt">
 								Guesses were <span className='guess-words'>{prevUserWord}</span> and <span className='guess-words'>{prevAiWord}</span>
-								<span className='timer'>AI is thinking...</span>
 							</p>
 						)}
 						<div className='input-group'>
@@ -395,7 +394,7 @@ const MindMeld: React.FC = () => {
 								disabled
 							/>
 							<button className='main-button' disabled>
-								Waiting...
+								Waiting for AI...
 							</button>
 						</div>
 					</div>
