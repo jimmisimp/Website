@@ -47,6 +47,8 @@ html
         height: 100vh
         max-width: none
         max-height: none
+        @media (max-width: 800px)
+            align-content: flex-start
         
 .name
     font-size: 40px
@@ -59,11 +61,11 @@ html
     background-color:$color-indigo-1
     border-radius: 4px
     border: none
-    font-family: $font-sans
-    font-weight: 600
+    font-family: $font-block
+    font-weight: 400
     letter-spacing: 0.25px
-    font-size: 16px
-    padding: 8px 16px
+    font-size: 24px
+    padding: 12px 20px
     color: $color-indigo-3
     cursor: pointer
     transition: all 100ms ease
@@ -182,10 +184,14 @@ input
     font-family: $font-sans
     font-weight: 500
     font-size: 24px
-    padding: 16px
-    min-width: 480px
+    gap: 4px
+    padding-top: 8px
     min-height: 480px
     color: $material-base
+    @media (max-width: 800px)
+        min-width: 300px
+    @media (min-width: 800px)
+        min-width: 480px
     .subtitle
         font-size: 18px
         max-width: 520px
@@ -193,11 +199,14 @@ input
     h2
         margin: 0px
         color: #fff
-        font-size: 8rem
         font-weight: 400
         font-family: $font-block
         font-display: block
         text-shadow: 16px 16px 0 $color-indigo-3,-16px 16px 0 $color-indigo-3, -16px -16px 0 $color-indigo-3, 16px -16px 0 $color-indigo-3, 16px 0px 0 $color-indigo-3, -16px 0px 0 $color-indigo-3, 0px 16px 0 $color-indigo-3, 0px -16px 0 $color-indigo-3
+        @media (max-width: 800px)
+            font-size: 5rem
+        @media (min-width: 800px)
+            font-size: 8rem
     .game-area
         display: flex
         flex-direction: column
@@ -286,7 +295,7 @@ input
 .wave-container
     display: grid
     @media (max-width: 800px)
-        grid-template-columns: repeat(24, 1fr)
+        grid-template-columns: repeat(14, 1fr)
         grid-template-rows: repeat(24, 1fr)
     @media (min-width: 800px)
         grid-template-columns: repeat(32, 1fr)
