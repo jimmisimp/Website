@@ -5,7 +5,7 @@ import { animate, createTimer, stagger, utils } from 'animejs';
 const openai = new OpenAI({ apiKey: process.env.REACT_APP_OPENAIKEY, dangerouslyAllowBrowser: true });
 
 // --- Configuration ---
-const API_BASE_URL = '/api';
+const API_BASE_URL = '/.netlify/functions';
 
 type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'roundWon' | 'roundLost' | 'resetting';
 
