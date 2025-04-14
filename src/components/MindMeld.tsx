@@ -105,14 +105,14 @@ const MindMeld: React.FC = () => {
 				animationColor = [indigo3Value, indigo2Value]
 				break
 			case 'roundWon':
-				animationDelay = 50
+				animationDelay = 100
 				animationDuration = 2000
 				animationScale = [0.5, 1.5]
 				animationColor = [indigo3Value, green1Value]
 				break
 			case 'roundLost':
 				animationDelay = 160
-				animationDuration = 2000
+				animationDuration = 4000
 				animationScale = [1.1, 0.6]
 				animationColor = [indigo3Value, red1Value]
 				break
@@ -182,7 +182,7 @@ const MindMeld: React.FC = () => {
 			messages: [{ role: "system", content: prompt }, { role: "system", content: agentPrompt }],
 		});
 		const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned'
-		if (checkIfPreviouslyUsed(aiGuess.toLowerCase())) {
+		if (checkIfPreviouslyUsed(aiGuess,previousUserWord,previousAiWord)) {
 			warn = warn.includes(aiGuess) ? warn : `${aiGuess},${warn}`
 			console.warn(`Already used: ${aiGuess}`)
 			return await generateAiGuess(previousUserWord, previousAiWord, warn)
@@ -226,14 +226,16 @@ const MindMeld: React.FC = () => {
 		}
 	};
 
-	const checkIfPreviouslyUsed = (guess: string) => {
-		guess = guess.toLowerCase()
-		const roundWords = [roundResults.map(result => result.userGuess), roundResults.map(result => result.aiGuess)].flat()
+	const checkIfPreviouslyUsed = (checkedWord: string, ...args: any[]) => {
+		checkedWord = checkedWord.toLowerCase()
+		const roundWords = [roundResults.map(result => result.userGuess), roundResults.map(result => result.aiGuess), ...args].flat()
 		const suffixes = ['s', 'es', 'ed', 'ing', 'ly', 'ate', 'ion', 'r', 'red', 'ring', 'led'];
 		const isExcluded = roundWords.some(w => {
-			if (guess === w || w === guess) return true;
+			if (checkedWord === w || w === checkedWord) return true;
 			for (const suffix of suffixes) {
-				if (guess === w + suffix || w === guess + suffix) return true;
+				if (checkedWord === w + suffix || w === checkedWord + suffix) {
+					return true;	
+				}
 			}
 			return false;
 		});
@@ -245,7 +247,7 @@ const MindMeld: React.FC = () => {
 		if (gameState !== 'awaitingUserGuess' || !userInput.trim()) return;
 		setGameState('resetting');
 
-		if (checkIfPreviouslyUsed(userInput.trim().toLowerCase())) {
+		if (checkIfPreviouslyUsed(userInput.trim())) {
 			setGameState('awaitingUserGuess');
 			const input = utils.$('#user-input')[0]
 			input.classList.add('error')
@@ -281,11 +283,9 @@ const MindMeld: React.FC = () => {
 				
 				setGameState('resetting');
 				setGameState('awaitingUserGuess');
-				
-				let newAiGuess = await new Promise<string>(resolve => 
-					generateAiGuess(currentUserGuess, currentAiGuess)
-					.then(resolve)
-				);
+
+				// Generate new AI guess
+				let newAiGuess = await new Promise<string>(resolve => generateAiGuess(currentUserGuess, currentAiGuess).then(resolve));
 				console.log({newAiGuess: `${newAiGuess}`})
 				setCurrentAiGuess(newAiGuess.toLowerCase());
 				isGeneratingRef.current = false;
@@ -382,6 +382,7 @@ const MindMeld: React.FC = () => {
 								autoComplete='off'
 								id="user-input"
 								type="text"
+								maxLength={32}
 								value={userInput}
 								onChange={handleInputChange}
 								onKeyPress={handleKeyPress}
@@ -412,7 +413,7 @@ const MindMeld: React.FC = () => {
 								disabled
 							/>
 							<button className='main-button' disabled>
-								Waiting for AI...
+								Wait...
 							</button>
 						</div>
 					</div>
@@ -420,7 +421,7 @@ const MindMeld: React.FC = () => {
 
 				{gameState === 'resetting' && (
 					<div className="game-controls">
-						<p className="prompt">Loading round...</p>
+						<p className="prompt">Waiting for AI...</p>
 					</div>
 				)}
 
