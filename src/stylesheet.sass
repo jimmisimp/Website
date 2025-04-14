@@ -3,7 +3,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=block')
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@700&display=swap')
 
-
 $material-base: #d9d9d9
 $material-inset: #cfcece
 $material-emphasis: #adcdfc
@@ -16,11 +15,22 @@ $font-sans: 'Assistant', Arial, Helvetica, sans-serif
 $font-block: 'Vina Sans', Arial, Helvetica, sans-serif
 $font-mono: 'Anonymous Pro', Courier, monospace
 $color-red-1: #ff4c4c
-$color-green-1: #11ce11
-$color-indigo-0: #989fff
-$color-indigo-1: #717aff
-$color-indigo-2: #4e4e9e
-$color-indigo-3: #3a3a7e
+$color-green-1: #5fc95f
+$color-indigo-0:rgb(196, 167, 214)
+$color-indigo-1:rgb(96, 70, 112)
+$color-indigo-2:rgb(55, 33, 68)
+$color-indigo-3: #1b0e22
+
+:root
+  --color-red-1: #{$color-red-1}
+  --color-green-1: #{$color-green-1}
+  --color-indigo-0: #{$color-indigo-0}
+  --color-indigo-1: #{$color-indigo-1}
+  --color-indigo-2: #{$color-indigo-2}
+  --color-indigo-3: #{$color-indigo-3}
+  --material-base: #{$material-base}
+  --material-inset: #{$material-inset}
+  --text-base: #{$text-base}
 
 html
     background-color: $material-base
@@ -69,7 +79,7 @@ html
     padding: 12px 20px
     color: $color-indigo-3
     cursor: pointer
-    transition: all 100ms ease
+    transition: all 300ms ease
     position: relative
     &:hover
         background-color: $color-indigo-0
@@ -203,7 +213,7 @@ input
         margin: 0px
     h2
         margin: 0px
-        color: #fff
+        color: $color-indigo-0
         font-weight: 400
         font-family: $font-block
         font-display: block
@@ -300,11 +310,11 @@ input
 .wave-container
     display: grid
     @media (max-width: 800px)
-        grid-template-columns: repeat(14, 1fr)
-        grid-template-rows: repeat(24, 1fr)
+        grid-template-columns: repeat(9, 1fr)
+        grid-template-rows: repeat(16, 1fr)
     @media (min-width: 800px)
-        grid-template-columns: repeat(32, 1fr)
-        grid-template-rows: repeat(18, 1fr)
+        grid-template-columns: repeat(16, 1fr)
+        grid-template-rows: repeat(9, 1fr)
     align-items: center
     justify-items: center
     gap: 1px
@@ -317,14 +327,7 @@ input
     overflow: hidden
     background-color: $color-indigo-3
     .wave-dot
-        @media (max-width: 800px)
-            width: 1rem
-            height: 1rem
-        @media (min-width: 800px)
-            width: 1.5rem
-            height: 1.5rem
-        @media (min-width: 1921px)
-            width: 2.25rem
-            height: 2.25rem
-        background-color: $color-indigo-2
-        border-radius: 4px
+        width: 90%
+        height: 90%
+        background-color: $color-indigo-3
+        border-radius: 2%

@@ -10,6 +10,7 @@ const API_BASE_URL = '/.netlify/functions';
 type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'roundWon' | 'roundLost' | 'resetting';
 
 
+
 const MindMeld: React.FC = () => {
 	const [userInput, setUserInput] = useState<string>('');
 	const [gameMessages, setGameMessages] = useState<string[]>([]);
@@ -21,7 +22,7 @@ const MindMeld: React.FC = () => {
 	const [prevAiWord, setPrevAiWord] = useState<string | null>(null);
 	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string }[]>([]);
 	const [currentAiGuess, setCurrentAiGuess] = useState<string>('');
-	const [isGeneratingAiGuess, setIsGeneratingAiGuess] = useState<boolean>(false);
+	const isGeneratingRef = useRef<boolean>(false);
 
 	const currentAnimation = useRef<any>(null)
 	const timer = useRef<any>(null)
@@ -30,11 +31,22 @@ const MindMeld: React.FC = () => {
 	const $timeSec = utils.$('.time-vals')[0]
 	const $timeMil = utils.$('.time_secs')[0]
 
+	const bodyStyles = window.getComputedStyle(document.body);
+	const indigo3Value = bodyStyles.getPropertyValue('--color-indigo-3').trim();
+	const indigo2Value = bodyStyles.getPropertyValue('--color-indigo-2').trim();
+	const indigo1Value = bodyStyles.getPropertyValue('--color-indigo-1').trim();
+	const indigo0Value = bodyStyles.getPropertyValue('--color-indigo-0').trim();
+	const green1Value = bodyStyles.getPropertyValue('--color-green-1').trim();
+	const red1Value = bodyStyles.getPropertyValue('--color-red-1').trim();
+
+	const ROUND_LENGTH = 25000
+
 	// Effect for the timer
 	useEffect(() => {
 		timer.current?.revert()
+		if (round < 1) return;
 		timer.current = createTimer({
-			duration: 25000,
+			duration: ROUND_LENGTH,
 			reversed: true,
 			frameRate: 16,
 			onUpdate: self => {
@@ -73,7 +85,7 @@ const MindMeld: React.FC = () => {
 		};
 	}, []);
 
-	const grid = windowWidth < 800 ? [14, 24] : [32, 18];
+	const grid = windowWidth < 800 ? [9, 16] : [16, 9];
 
 	function animateGrid(stateAtStart: GameState = 'awaitingUserGuess') {
 		const from = utils.random(0, grid[0] * grid[1]);
@@ -82,62 +94,50 @@ const MindMeld: React.FC = () => {
 
 		let animationDelay = 0
 		let animationDuration = 1000
-		let animationTranslate = '0rem'
-		let animationScale = [1, 1]
-		let animationColor = ['#4e4e9e', '#717aff']
+		let animationScale = [0.5, 1.5]
+		let animationColor = [indigo3Value, indigo2Value]
 
 		switch (stateAtStart) {
 			case 'idle':
-				animationDelay = 200
-				animationDuration = 4000
-				animationTranslate = '0.15rem'
-				animationScale = [1, 1.25]
-				animationColor = ['#4e4e9e', '#5e5eae']
+				animationDelay = 240
+				animationDuration = 2000
+				animationScale = [0.9, 1.1]
+				animationColor = [indigo3Value, indigo2Value]
 				break
 			case 'roundWon':
-				animationDelay = 15
+				animationDelay = 50
 				animationDuration = 2000
-				animationTranslate = '1rem'
-				animationScale = [1, 3]
-				animationColor = ['#4e4e9e', '#11ce11']
+				animationScale = [0.5, 1.5]
+				animationColor = [indigo3Value, green1Value]
 				break
 			case 'roundLost':
-				animationDelay = 200
-				animationDuration = 4000
-				animationTranslate = '0.15rem'
-				animationScale = [1, 0.66]
-				animationColor = ['#4e4e9e', '#ff4c4c']
+				animationDelay = 160
+				animationDuration = 2000
+				animationScale = [1.1, 0.6]
+				animationColor = [indigo3Value, red1Value]
 				break
 			default:
-				animationDelay = 20
-				animationDuration = 1200
-				animationTranslate = '0.25rem'
-				animationScale = [1, 2]
-				animationColor = ['#4e4e9e', '#5e5eae']
+				animationDelay = 250
+				animationDuration = 600
+				animationScale = [0.75, 1.25]
+				animationColor = [indigo3Value, indigo1Value]
 				break
 		}
-		currentAnimation.current?.pause();
+		currentAnimation.current?.revert();
 		currentAnimation.current = animate(waveDots, {
-			translateX: [
-				{ to: stagger(animationTranslate, { grid, from, axis: 'x' }), ease: 'inOutSine' },
-				{ to: 0, ease: 'inOutSine' }
-			],
-			translateY: [
-				{ to: stagger(animationTranslate, { grid, from, axis: 'y' }), ease: 'inOutSine' },
-				{ to: 0, ease: 'inOutSine' }
-			],
 			scale: [
-				{ from: 1, to: animationScale, ease: 'inOutSine' },
-				{ to: 1, ease: 'inOutSine' }
+				{ to: animationScale[0] },
+				{ to: animationScale[1] },
+				{ to: 1, ease: 'inSine' }
 			],
 			backgroundColor: [
-				{ to: animationColor, ease: 'inOutSine' },
-				{ to: animationColor[0], ease: 'inOutSine' }
+				{ to: animationColor[0] },
+				{ to: animationColor[1] },
+				{ to: animationColor[0], duration: animationDuration*.75 }
 			],
-			delay: stagger(animationDelay, { grid, from }),
+			delay: stagger(animationDelay, { grid, from, ease: 'inSine' }),
 			duration: animationDuration,
-			frameRate: 60,
-			ease: 'linear',
+			ease: 'inOutSine',
 			onComplete: () => {
 				if (gameStateRef.current !== 'roundLost' && gameStateRef.current !== 'roundWon') {
 					animateGrid(gameStateRef.current)
@@ -182,7 +182,7 @@ const MindMeld: React.FC = () => {
 			messages: [{ role: "system", content: prompt }, { role: "system", content: agentPrompt }],
 		});
 		const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned'
-		if (checkIfPreviouslyUsed(aiGuess)) {
+		if (checkIfPreviouslyUsed(aiGuess.toLowerCase())) {
 			warn = warn.includes(aiGuess) ? warn : `${aiGuess},${warn}`
 			console.warn(`Already used: ${aiGuess}`)
 			return await generateAiGuess(previousUserWord, previousAiWord, warn)
@@ -255,12 +255,13 @@ const MindMeld: React.FC = () => {
 		const currentUserGuess = userInput.trim().toLowerCase();
 		setUserInput('');
 
-		while (isGeneratingAiGuess) {
+		while (isGeneratingRef.current) {
 			setGameState('waitingForAI');
+			await new Promise(resolve => setTimeout(resolve, 100));
 		}
 
 		try {
-			setIsGeneratingAiGuess(true);
+			isGeneratingRef.current = true;
 			const turnMessages = roundResults.length > 0 ? roundResults.map(result => `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`) : ['First round.'];
 
 			if (await checkForMatch(currentUserGuess, currentAiGuess)) {
@@ -281,15 +282,18 @@ const MindMeld: React.FC = () => {
 				setGameState('resetting');
 				setGameState('awaitingUserGuess');
 				
-				let newAiGuess = await new Promise<string>(resolve => generateAiGuess(currentUserGuess, currentAiGuess).then(resolve));
+				let newAiGuess = await new Promise<string>(resolve => 
+					generateAiGuess(currentUserGuess, currentAiGuess)
+					.then(resolve)
+				);
+				console.log({newAiGuess: `${newAiGuess}`})
 				setCurrentAiGuess(newAiGuess.toLowerCase());
+				isGeneratingRef.current = false;
 			}
 		} catch (error) {
 			console.error("Error getting AI guess:", error);
 			setGameMessages(prev => [...prev, "Error communicating with AI. Please try again."]);
 			setGameState('awaitingUserGuess');
-		} finally {
-			setIsGeneratingAiGuess(false);
 		}
 	};
 
@@ -351,7 +355,7 @@ const MindMeld: React.FC = () => {
 						{gameMessages.length > 0 ? gameMessages.map((msg, index) => (
 							<div className='prev-words-group' key={index} dangerouslySetInnerHTML={{ __html: msg }}></div>
 						)) : (
-							<p className='subtitle'>First, both players will submit a word. Each round, players will see each other's guesses, and attempt to guess what the other player will submit next. See how quickly you can converge.</p>
+							<p className='subtitle'>Guess the same word as your AI partner.</p>
 						)}
 					</span>
 				</div>
@@ -375,6 +379,7 @@ const MindMeld: React.FC = () => {
 						)}
 						<div className='input-group'>
 							<input
+								autoComplete='off'
 								id="user-input"
 								type="text"
 								value={userInput}
@@ -400,6 +405,7 @@ const MindMeld: React.FC = () => {
 						)}
 						<div className='input-group'>
 							<input
+								autoComplete='off'
 								type="text"
 								value={userInput}
 								placeholder={"Guess submitted"}
