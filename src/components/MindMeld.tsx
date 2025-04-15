@@ -21,7 +21,7 @@ const MindMeld: React.FC = () => {
 	const [prevUserWord, setPrevUserWord] = useState<string | null>(null);
 	const [prevAiWord, setPrevAiWord] = useState<string | null>(null);
 	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string }[]>([]);
-	const [currentAiGuess, setCurrentAiGuess] = useState<string>('');
+	const currentAiGuessRef = useRef<string>('');
 	const isGeneratingRef = useRef<boolean>(false);
 
 	const currentAnimation = useRef<any>(null)
@@ -139,11 +139,10 @@ const MindMeld: React.FC = () => {
 			duration: animationDuration,
 			ease: 'inOutSine',
 			onComplete: () => {
-				if (gameStateRef.current !== 'roundLost' && gameStateRef.current !== 'roundWon') {
-					animateGrid(gameStateRef.current)
-				}
-				else {
-					animateGrid('idle')
+				if (gameStateRef.current === 'idle') {
+					animateGrid('idle');
+				} else if (gameStateRef.current !== 'roundLost' && gameStateRef.current !== 'roundWon') {
+					animateGrid(gameStateRef.current);
 				}
 			}
 		})
@@ -175,7 +174,7 @@ const MindMeld: React.FC = () => {
 
 		// Generate guess
 		const guess = await openai.chat.completions.create({
-			model: "gpt-4o",
+			model: "gpt-4.1-mini",
 			temperature: 0.9,
 			top_p: 1.0,
 			max_tokens: 12,
@@ -187,6 +186,8 @@ const MindMeld: React.FC = () => {
 			console.warn(`Already used: ${aiGuess}`)
 			return await generateAiGuess(previousUserWord, previousAiWord, warn)
 		}
+		currentAiGuessRef.current = aiGuess.toLowerCase();
+		isGeneratingRef.current = false;
 		return aiGuess;
 	};
 
@@ -208,7 +209,7 @@ const MindMeld: React.FC = () => {
 		setRound(1);
 		setGameState('resetting');
 		let newAiGuess = await generateAiGuess(null, null);
-		setCurrentAiGuess(newAiGuess.toLowerCase());
+		currentAiGuessRef.current = newAiGuess.toLowerCase();
 		setGameState('awaitingUserGuess');
 		setPrevUserWord(null);
 		setPrevAiWord(null);
@@ -266,17 +267,18 @@ const MindMeld: React.FC = () => {
 			isGeneratingRef.current = true;
 			const turnMessages = roundResults.length > 0 ? roundResults.map(result => `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`) : ['First round.'];
 
-			if (await checkForMatch(currentUserGuess, currentAiGuess)) {
+			if (await checkForMatch(currentUserGuess, currentAiGuessRef.current)) {
 				setGameMessages(turnMessages.concat(`<span class='prev-words prev-words-match'>${currentUserGuess}</span>`));
 				setGameState('roundWon');
 				animateGrid('roundWon')
-				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess }]);
+				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuessRef.current }]);
 				await recordRoundToDatabase(currentUserGuess);
+				isGeneratingRef.current = false;
 			} else {
 				// Append to previous words
-				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuess }]);
+				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuessRef.current }]);
 				setPrevUserWord(currentUserGuess);
-				setPrevAiWord(currentAiGuess);
+				setPrevAiWord(currentAiGuessRef.current);
 				
 				setGameMessages(turnMessages);
 				setRound(prev => prev + 1);
@@ -285,10 +287,8 @@ const MindMeld: React.FC = () => {
 				setGameState('awaitingUserGuess');
 
 				// Generate new AI guess
-				let newAiGuess = await new Promise<string>(resolve => generateAiGuess(currentUserGuess, currentAiGuess).then(resolve));
-				console.log({newAiGuess: `${newAiGuess}`})
-				setCurrentAiGuess(newAiGuess.toLowerCase());
-				isGeneratingRef.current = false;
+				generateAiGuess(currentUserGuess, currentAiGuessRef.current)
+				
 			}
 		} catch (error) {
 			console.error("Error getting AI guess:", error);
