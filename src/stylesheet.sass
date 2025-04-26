@@ -3,14 +3,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=block')
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@700&display=swap')
 
-$material-base: #d9d9d9
+$material-base: rgb(247, 238, 253)
 $material-inset: #cfcece
 $material-emphasis: #adcdfc
 
+$text-white: #f6f6f6
 $text-base: #171717
 $text-hover: #2c2c2c
 $text-down: #3d3d3d
-$font-hand: 'Nanum Pen Script', Arial, Helvetica, sans-serif
 $font-sans: 'Assistant', Arial, Helvetica, sans-serif
 $font-block: 'Vina Sans', Arial, Helvetica, sans-serif
 $font-mono: 'Anonymous Pro', Courier, monospace
@@ -33,23 +33,27 @@ $color-indigo-3: #1b0e22
   --text-base: #{$text-base}
 
 html
-    background-color: $material-base
+    background-color: $color-indigo-3
 
 #root
     display: flex
     height: 100vh
 
+fieldset
+    border: none
+    padding: 0px
+    margin: 0px
+
 .center-wrapper
     display: grid
-    color: $text-base
-    align-content: center
-    justify-content: center
+    color: $text-white
     justify-items: center
     text-align: center
     margin: auto
     padding: 8px
     max-width: 640px
-    font-family: $font-hand
+    width: 100%
+    font-family: $font-block
     gap: 4px
     &.mind-meld-wrapper
         margin: 0px
@@ -60,12 +64,29 @@ html
         max-height: none
         @media (max-width: 800px)
             align-content: flex-start
-        
-.name
-    font-size: 40px
 
-.face-logo
-    width: 240px
+.feed-wrapper
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    width: 100%
+    padding-bottom: 48px
+    gap: 8px
+
+.button-wrapper
+    display: flex
+    justify-content: center
+    width: 100%
+    margin-top: 24px
+    gap: 8px
+
+.name
+    font-size: 3rem
+    color: $text-white
+
+.guy
+    width: 200px
+    margin-top: 32px
     margin-bottom: 16px
 
 .main-button
@@ -75,7 +96,7 @@ html
     font-family: $font-block
     font-weight: 400
     letter-spacing: 0.25px
-    font-size: 24px
+    font-size: 1.5rem
     padding: 12px 20px
     color: $color-indigo-3
     cursor: pointer
@@ -88,30 +109,24 @@ html
     &:focus-visible
         outline: 2px solid $color-indigo-3
     &:disabled
-        background-color: $color-indigo-2
-        color: $color-indigo-3
+        background-color: $color-indigo-0
+        color: $text-white
         cursor: default
     .pulse
         position: absolute
         top: 0
         left: 0
         z-index: -99
-        border-radius: 24px
-        background-color: #00000050
+        border-radius: 4px
+        background-color: #ffffff30
         animation: pulse 4s infinite
         width: 100%
         height: 100%
 
 .subheader
-    line-height: 100%
-    font-size: 24px
-    min-height: 52px
-
-.generated-text
-    line-height: 120%
-    text-align: left
-    font-size: 24px
-    font-family: $font-hand
+    font-size: 1.3rem
+    font-family: $font-sans
+    color: $text-white
 
 @keyframes pulse 
   0% 
@@ -121,34 +136,53 @@ html
   100%
     transform: scaleX(1.1) scaleY(1.3)
     opacity: 0%
-  
+
+@keyframes loading
+    0%
+        opacity: 1
+    50%
+        opacity: 0.5
+        
 .content-block
     display: flex
     flex-direction: column
     margin-top: 8px
     align-items: flex-start
     font-family: $font-sans
+    color: $text-base
     font-weight: 500
     gap: 8px
     padding: 16px
-    background-color: $material-inset
-    border-radius: 16px
+    background-color: $material-base
+    border-radius: 8px
+    .generated-text
+        line-height: 150%
+        text-align: left
+        font-size: 1rem
+        font-family: $font-sans
+        &.loading-text
+            animation: loading 3s infinite ease-in-out
 
 .input-group
     display: flex
     justify-content: center
+    width: 100%
     gap: 8px
 
 input
     font-family: $font-sans
     flex-grow: 1
-    font-size: 18px
+    font-size: 1rem
     padding: 8px
     border: none
     border-radius: 4px
+    outline: 2px solid $color-indigo-0
     &:disabled
-        color: $text-down
-        background-color: $material-inset
+        color: $text-white
+        outline: none
+        background-color: $color-indigo-0
+    &:focus-visible
+        outline: 2px solid $color-indigo-1
     &.error
         outline: 2px solid $color-red-1
         color: $color-red-1
@@ -157,19 +191,19 @@ input
 .color-results
     display: flex
     align-self: stretch
-    font-size: 14px
+    font-size: .9rem
     flex-direction: column
     font-family: $font-sans
     border-radius: 16px
 
 .color-cost
-    font-size: 20px
+    font-size: 1rem
     margin-top: 12px
     margin-bottom: 8px
-    font-family: $font-hand
+    font-family: $font-block
 
 .link
-    font-size: 16px
+    font-size: 1rem
     font-weight: 500
     margin: 16px
     font-family: $font-sans
@@ -180,17 +214,17 @@ input
 .avatar-container
     display: flex
     flex-direction: row
-    align-items: center
     gap: 8px
     margin-top: 24px
     .avatar
         width: 24px
         border-radius: 6px
     .avatar-label
-        font-family: $font-sans
-        font-weight: 600
-        line-height: 16px
-        font-size: 16px
+        font-family: $font-block
+        font-weight: 100
+        line-height: 1.25rem
+        letter-spacing: 0.3px
+        font-size: 1.25rem
 
 .mind-meld-game
     display: flex
@@ -198,7 +232,7 @@ input
     align-items: center
     font-family: $font-sans
     font-weight: 500
-    font-size: 24px
+    font-size: 1.5rem
     gap: 4px
     padding-top: 8px
     min-height: 480px
@@ -208,7 +242,7 @@ input
     @media (min-width: 800px)
         min-width: 480px
     .subtitle
-        font-size: 18px
+        font-size: 1.25rem
         max-width: 520px
         margin: 0px
     h2
@@ -246,7 +280,7 @@ input
             flex-direction: column
             align-items: center
             gap: 8px
-            font-size: 16px
+            font-size: 1rem
             padding: 16px
             background-color: $color-indigo-3
             border-radius: 8px
@@ -292,7 +326,7 @@ input
                 border-radius: 8px
                 padding: 12px
             .prompt
-                font-size: 18px
+                font-size: 1rem
                 gap: 4px
                 background-color: $color-indigo-3
                 border-radius: 8px

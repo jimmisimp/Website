@@ -10,9 +10,12 @@ function App() {
       <Routes>
         <Route path="/" element={
           <div className="main-wrapper center-wrapper">
-            <img src={"face_logo.svg"} className="face-logo" alt="Website logo" />
+            <img src={"guy_white.svg"} className="guy" alt="Website logo" />
             <div className='name'>
               adam yuras
+            </div>
+            <div className='subheader'>
+                is creating ai-powered experiences
             </div>
             <TextGenerator />
           </div>
