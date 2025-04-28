@@ -159,6 +159,7 @@ app.post('/api/record-round', async (req, res) => {
   }
 });
 
+// Retrieve rounds from Astra DB based on a word
 app.get('/api/get-rounds', async (req, res) => {
 	const { word } = req.query;
 
@@ -191,13 +192,13 @@ app.get('/api/get-rounds', async (req, res) => {
 			limit: 3 // Limit to top 3 results
 		});
 
-		// 3. Extract correct_guess from results
+		// 3. Extract correctGuess from results
 		const topGuesses = [];
 		const similarity = [];
 		for await (const row of cursor) {
-			console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correct_guess);
-			if (row.correct_guess) {
-				topGuesses.push(row.correct_guess);
+			console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correctGuess);
+			if (row.correctGuess) {
+				topGuesses.push(row.correctGuess);
 			}
 			if (row['$similarity']) {
 				similarity.push(row['$similarity']);
@@ -215,6 +216,29 @@ app.get('/api/get-rounds', async (req, res) => {
         } else if (error.errors) { // Astra DB specific errors
             console.error("Astra DB Error:", error.errors);
         }
+		res.status(500).json({ message: 'Internal server error', error: error.message });
+	}
+});
+
+// Retrieves all unique words from Astra DB
+app.get('/api/get-all-words', async (req, res) => {
+	if (!astraTable) {
+		console.error("Astra table not initialized. Cannot get words.");
+		return res.status(500).json({ message: 'Database not ready' });
+	}
+
+	try {
+		// Simply query all rows without vector search
+		const cursor = await astraTable.find({});
+
+		const uniqueWords = new Set();
+		for await (const row of cursor) {
+			uniqueWords.add(row.userWord);
+		}
+
+		res.status(200).json({ uniqueWords: Array.from(uniqueWords) });
+	} catch (error) {
+		console.error("Error processing /api/get-all-words:", error);
 		res.status(500).json({ message: 'Internal server error', error: error.message });
 	}
 });

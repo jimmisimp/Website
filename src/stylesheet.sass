@@ -230,6 +230,7 @@ input
     display: flex
     flex-direction: column
     align-items: center
+    justify-content: center
     font-family: $font-sans
     font-weight: 500
     font-size: 1.5rem
@@ -298,6 +299,7 @@ input
                     align-items: center
                     gap: 0px
                     .prev-words
+                        position: relative
                         margin: 0px
                         padding: 4px 8px
                         &.prev-words-user
@@ -313,6 +315,23 @@ input
                             background-color: $color-green-1
                             color: $color-indigo-3
                             border-radius: 4px
+                        .new-badge
+                            position: absolute
+                            z-index: 100
+                            top: -10px
+                            right: -5px
+                            font-size: 0.6rem
+                            background-color: $color-indigo-0
+                            color: $color-indigo-3
+                            padding: 1px 4px
+                            border-radius: 3px
+                            font-weight: bold
+                            opacity: 0
+                            transform: rotate(10deg) scale(0.6)
+                            transition: opacity 0.4s ease, transform 0.5s ease
+                            &.visible
+                                opacity: 1
+                                transform: rotate(10deg) scale(1)
 
         .game-controls
             display: flex
@@ -365,3 +384,19 @@ input
         height: 90%
         background-color: $color-indigo-3
         border-radius: 2%
+
+.loading-words
+    font-size: 0.75rem
+    color: $color-indigo-0
+    font-family: $font-sans
+    opacity: 0.7
+    margin-top: -5px
+    animation: loading 1.5s infinite ease-in-out
+
+@keyframes pulse-badge
+    0%
+        transform: rotate(10deg) scale(1)
+    50% 
+        transform: rotate(15deg) scale(1.1)
+    100%
+        transform: rotate(10deg) scale(1)
