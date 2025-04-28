@@ -231,7 +231,7 @@ const MindMeld: React.FC = () => {
 			const data: { topGuesses: string[], similarity: number[] } = await response.json();
 
 			prompt += `\n\nWhat word will the user likely guess next, based on the words '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
-			agentPrompt = `\n\nLikely words based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
+			agentPrompt = `\n\nLikely words based on previous games: ${data.topGuesses?.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
 		}
 		else {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
