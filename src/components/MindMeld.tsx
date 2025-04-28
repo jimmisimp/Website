@@ -231,13 +231,12 @@ const MindMeld: React.FC = () => {
 			const data: { topGuesses: string[], similarity: number[] } = await response.json();
 
 			prompt += `\n\nWhat word will the user likely guess next, based on the words '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
-			agentPrompt = `\n\nTop 5 most likely based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
-			console.log(agentPrompt)
+			agentPrompt = `\n\nLikely words based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
 		}
 		else {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
 			const randNum = Math.floor(Math.random() * 5) + 2
-			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least one other letter from the following: '${seed.substring(2)}' `
+			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least one other letter from the following: '${seed.substring(2)}'. The only exception to these rules is if no words can be made with the assigned letters. In that case, create any word. `
 			console.log({seed: `${seed}`, randNum: `${randNum}`})
 		}
 
@@ -248,7 +247,6 @@ const MindMeld: React.FC = () => {
 		const guess = await openai.responses.create({
 			model: "gpt-4.1-mini",
 			temperature: 0.9,
-			top_p: 1.0,
 			max_output_tokens: 16,
 			instructions: prompt,
 			input: [{ role: "system", content: agentPrompt }],
@@ -587,7 +585,7 @@ const MindMeld: React.FC = () => {
 
 				{gameState === 'roundWon' && (
 					<div className="game-controls">
-						<p className="prompt">Converged in {round} guesses!</p>
+						<p id="win-count" className="prompt">Melded in {round} guesses! <span id="new-words-count"><span className="new-words-badge">★</span> {newWords.length} new words</span></p>
 						<div className='input-group'>
 							<button className='main-button' onClick={handleStartGame}>Play again?</button>
 						</div>
