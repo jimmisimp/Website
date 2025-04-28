@@ -9,7 +9,11 @@ const API_BASE_URL = '/.netlify/functions';
 
 type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'roundWon' | 'roundLost' | 'resetting';
 
-
+// Use proper type for words in database
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface WordsInDatabase {
+	uniqueWords: string[];
+}
 
 const MindMeld: React.FC = () => {
 	const [userInput, setUserInput] = useState<string>('');
@@ -23,6 +27,13 @@ const MindMeld: React.FC = () => {
 	const [roundResults, setRoundResults] = useState<{ round: number, userGuess: string, aiGuess: string }[]>([]);
 	const currentAiGuessRef = useRef<string>('');
 	const isGeneratingRef = useRef<boolean>(false);
+	
+	// Store known words in a Set for efficient lookup
+	const [knownWords, setKnownWords] = useState<Set<string>>(new Set());
+	// Track new words found in the current round
+	const [newWords, setNewWords] = useState<string[]>([]);
+	// Track which new words have been animated
+	const [animatedNewWords, setAnimatedNewWords] = useState<Set<string>>(new Set());
 
 	const currentAnimation = useRef<any>(null)
 	const timer = useRef<any>(null)
@@ -35,11 +46,71 @@ const MindMeld: React.FC = () => {
 	const indigo3Value = bodyStyles.getPropertyValue('--color-indigo-3').trim();
 	const indigo2Value = bodyStyles.getPropertyValue('--color-indigo-2').trim();
 	const indigo1Value = bodyStyles.getPropertyValue('--color-indigo-1').trim();
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const indigo0Value = bodyStyles.getPropertyValue('--color-indigo-0').trim();
 	const green1Value = bodyStyles.getPropertyValue('--color-green-1').trim();
 	const red1Value = bodyStyles.getPropertyValue('--color-red-1').trim();
 
 	const ROUND_LENGTH = 25000
+
+	const response = async (endpoint: string, options?: RequestInit) => {
+		try {
+			const fullUrl = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+			console.log(`Fetching API: ${fullUrl}`);
+			
+			const response = await fetch(fullUrl, options);
+			
+			// First check if the response is ok
+			if (!response.ok) {
+				throw new Error(`API error: ${response.status} ${response.statusText}`);
+			}
+			
+			// Check if the content type is JSON
+			const contentType = response.headers.get('content-type');
+			if (!contentType || !contentType.includes('application/json')) {
+				// If we didn't get JSON, log the response text for debugging
+				const text = await response.text();
+				console.error('Received non-JSON response:', text.substring(0, 100) + '...');
+				throw new Error('Received non-JSON response from API');
+			}
+			
+			// Now it's safe to parse JSON
+			return await response.json();
+		} catch (error) {
+			console.error(`Error fetching ${endpoint}:`, error);
+			throw error;
+		}
+	};
+
+	// Animate new word badges sequentially
+	const animateNewWordBadges = () => {
+		if (newWords.length === 0) return;
+
+		// Animate each new word badge with a delay
+		let delay = 500; // Start after 500ms
+		const interval = 300; // 300ms between animations
+
+		newWords.forEach((word) => {
+			if (animatedNewWords.has(word.toLowerCase())) return; // Skip already animated words
+			
+			setTimeout(() => {
+				// Find all badges for this word and add the visible class
+				const elements = document.querySelectorAll(`.new-badge[data-word="${word.toLowerCase()}"]`);
+				elements.forEach(el => {
+					el.classList.add('visible');
+				});
+				
+				// Update animated words
+				setAnimatedNewWords(prev => {
+					const updated = new Set(prev);
+					updated.add(word.toLowerCase());
+					return updated;
+				});
+			}, delay);
+			
+			delay += interval;
+		});
+	};
 
 	// Effect for the timer
 	useEffect(() => {
@@ -160,12 +231,13 @@ const MindMeld: React.FC = () => {
 			const data: { topGuesses: string[], similarity: number[] } = await response.json();
 
 			prompt += `\n\nWhat word will the user likely guess next, based on the words '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
-			agentPrompt = roundResults.length > 0 ? `\n\n*Top 3 most likely based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')}* ` : ''
+			agentPrompt = `\n\nTop 5 most likely based on previous games: ${data.topGuesses.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
+			console.log(agentPrompt)
 		}
 		else {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
 			const randNum = Math.floor(Math.random() * 5) + 2
-			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least ${randNum - 2} other letters from the following: '${seed.substring(2)}' `
+			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least one other letter from the following: '${seed.substring(2)}' `
 			console.log({seed: `${seed}`, randNum: `${randNum}`})
 		}
 
@@ -173,14 +245,15 @@ const MindMeld: React.FC = () => {
 
 
 		// Generate guess
-		const guess = await openai.chat.completions.create({
+		const guess = await openai.responses.create({
 			model: "gpt-4.1-mini",
 			temperature: 0.9,
 			top_p: 1.0,
-			max_tokens: 12,
-			messages: [{ role: "system", content: prompt }, { role: "system", content: agentPrompt }],
+			max_output_tokens: 16,
+			instructions: prompt,
+			input: [{ role: "system", content: agentPrompt }],
 		});
-		const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned'
+		const aiGuess = guess.output_text || 'ERROR: No guess returned'
 		if (checkIfPreviouslyUsed(aiGuess,previousUserWord,previousAiWord)) {
 			warn = warn.includes(aiGuess) ? warn : `${aiGuess},${warn}`
 			console.warn(`Already used: ${aiGuess}`)
@@ -193,14 +266,15 @@ const MindMeld: React.FC = () => {
 
 	const checkForMatch = async (userGuess: string, aiGuess: string) => {
 		let prompt = `Word 1: ${userGuess}\nWord 2: ${aiGuess}`
-		const guess = await openai.chat.completions.create({
+		const guess = await openai.responses.create({
 			model: "gpt-4o-mini",
 			temperature: 0.0,
-			max_tokens: 5,
-			messages: [{ role: "system", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." }, { role: "user", content: prompt }],
+			max_output_tokens: 16,
+			instructions: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`.",
+			input: prompt,
 		});
 
-		return guess.choices[0].message.content === 'true';
+		return guess.output_text === 'true';
 	};
 
 	// MARK: Game Functions
@@ -216,6 +290,8 @@ const MindMeld: React.FC = () => {
 		setGameMessages(['Enter any word to begin.']);
 		setRoundResults([])
 		setUserInput('');
+		setNewWords([]);
+		setAnimatedNewWords(new Set());
 		animateGrid()
 	};
 
@@ -268,12 +344,79 @@ const MindMeld: React.FC = () => {
 			const turnMessages = roundResults.length > 0 ? roundResults.map(result => `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`) : ['First round.'];
 
 			if (await checkForMatch(currentUserGuess, currentAiGuessRef.current)) {
-				setGameMessages(turnMessages.concat(`<span class='prev-words prev-words-match'>${currentUserGuess}</span>`));
+				// Round is won, now check which words are new
+				try {
+					const data = await response('get-all-words');
+					console.log("Words from database:", data);
+					if (data && data.uniqueWords) {
+						const validWords = data.uniqueWords.filter((word: string | null) => word !== null)
+							.map((word: string) => word.toLowerCase());
+						console.log("Previous words:", validWords);
+						setKnownWords(new Set(validWords));
+						
+						// Identify all new words from this round
+						const newWordsFound: string[] = [];
+						// Check all user and AI guesses from this round
+						for (const result of roundResults) {
+							const userWordLower = result.userGuess.toLowerCase();
+							const aiWordLower = result.aiGuess.toLowerCase();
+							
+							if (!validWords.includes(userWordLower)) {
+								newWordsFound.push(result.userGuess);
+							}
+							if (!validWords.includes(aiWordLower)) {
+								newWordsFound.push(result.aiGuess);
+							}
+						}
+						// Check the final matching word
+						const finalWordLower = currentUserGuess.toLowerCase();
+						if (!validWords.includes(finalWordLower)) {
+							newWordsFound.push(currentUserGuess);
+						}
+						
+						console.log("New words found:", newWordsFound);
+						// Update state with new words
+						setNewWords(newWordsFound);
+						
+						// Generate HTML with new word badges that will be animated
+						const finalMessages = roundResults.map(result => {
+							const userWordClass = 'prev-words prev-words-user';
+							const aiWordClass = 'prev-words prev-words-ai';
+							
+							const userWordHtml = !validWords.includes(result.userGuess.toLowerCase()) 
+								? `<span class='${userWordClass}'>${result.userGuess}<span class="new-badge" data-word="${result.userGuess.toLowerCase()}">★</span></span>` 
+								: `<span class='${userWordClass}'>${result.userGuess}</span>`;
+								
+							const aiWordHtml = !validWords.includes(result.aiGuess.toLowerCase()) 
+								? `<span class='${aiWordClass}'>${result.aiGuess}<span class="new-badge" data-word="${result.aiGuess.toLowerCase()}">★</span></span>` 
+								: `<span class='${aiWordClass}'>${result.aiGuess}</span>`;
+							
+							return `${userWordHtml}${aiWordHtml}`;
+						});
+						
+						const matchClass = 'prev-words prev-words-match';
+						const matchHtml = !validWords.includes(currentUserGuess.toLowerCase()) 
+							? `<span class='${matchClass}'>${currentUserGuess}<span class="new-badge" data-word="${currentUserGuess.toLowerCase()}">★</span></span>` 
+							: `<span class='${matchClass}'>${currentUserGuess}</span>`;
+
+						console.log({finalMessages: finalMessages.concat(matchHtml)})
+							
+						setGameMessages(finalMessages.concat(matchHtml));
+					}
+				} catch (error) {
+					console.error("Failed to check for new words:", error);
+					// If we can't check for new words, just show the match without new indicators
+					setGameMessages(turnMessages.concat(`<span class='prev-words prev-words-match'>${currentUserGuess}</span>`));
+				}
+				
 				setGameState('roundWon');
 				animateGrid('roundWon')
 				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuessRef.current }]);
 				await recordRoundToDatabase(currentUserGuess);
 				isGeneratingRef.current = false;
+				
+				// Schedule animation of new word badges
+				setTimeout(animateNewWordBadges, 1000);
 			} else {
 				// Append to previous words
 				setRoundResults(prev => [...prev, { round: round, userGuess: currentUserGuess, aiGuess: currentAiGuessRef.current }]);
@@ -288,7 +431,6 @@ const MindMeld: React.FC = () => {
 
 				// Generate new AI guess
 				generateAiGuess(currentUserGuess, currentAiGuessRef.current)
-				
 			}
 		} catch (error) {
 			console.error("Error getting AI guess:", error);
@@ -334,6 +476,7 @@ const MindMeld: React.FC = () => {
 	}
 
 	// Call animateGrid once on component load
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		if (!isStarted.current) {
 			isStarted.current = true;
@@ -343,6 +486,14 @@ const MindMeld: React.FC = () => {
 
 	useEffect(() => {
 		gameStateRef.current = gameState;
+	}, [gameState]);
+
+	// Effect to animate new words when the game state changes to roundWon
+	useEffect(() => {
+		if (gameState === 'roundWon') {
+			setTimeout(animateNewWordBadges, 1000);
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [gameState]);
 
 	// MARK: Render
