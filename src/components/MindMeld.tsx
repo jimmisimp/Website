@@ -227,7 +227,6 @@ const MindMeld: React.FC = () => {
 		console.time('Time to generate guess')
 		if (previousUserWord && previousAiWord) {
 			// const searchWords = `${previousUserWord} + ${previousAiWord}`
-
 			// const response = await fetch(`${API_BASE_URL}/get-rounds?word=${encodeURIComponent(searchWords)}`);
 			// const data: { topGuesses: string[], similarity: number[] } = await response.json();
 			instructions += `What single word relates to both '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
