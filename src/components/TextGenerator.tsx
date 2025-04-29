@@ -321,7 +321,7 @@ export const TextGenerator: React.FC = () => {
                             <React.Fragment key={item.id}>
                                 <ChatAvatar />
                                 <div className='content-block'>
-                                    <div className={`generated-text${item.isLoading ? ' loading-text' : ''}`}>{item.content}</div>
+                                    <div className={`generated-text${item.isLoading ? ' loading' : ''}`}>{item.content}</div>
                                 </div>
                             </React.Fragment>
                         );

@@ -222,25 +222,24 @@ const MindMeld: React.FC = () => {
 
 	// MARK: AI Functions
 	const generateAiGuess = async (previousUserWord: string | null, previousAiWord: string | null, warn = ''): Promise<string> => {
-		let prompt = `You are playing a game. Your partner is about to guess a word. The goal is for you and your play partner to guess the same word.`
-		let agentPrompt = ''
+		let instructions = `You are playing a word-association game. Your partner is about to guess a word. The goal is for you and your play partner to independently guess the same word.`
+		let roundInput = ''
+		console.time('Time to generate guess')
 		if (previousUserWord && previousAiWord) {
-			const searchWords = `${previousUserWord} + ${previousAiWord}`
-			const response = await fetch(`${API_BASE_URL}/get-rounds?word=${encodeURIComponent(searchWords)}`);
-
-			const data: { topGuesses: string[], similarity: number[] } = await response.json();
-
-			prompt += `\n\nWhat word will the user likely guess next, based on the words '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
-			agentPrompt = `\n\nLikely words based on previous games: ${data.topGuesses?.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
+			// const searchWords = `${previousUserWord} + ${previousAiWord}`
+			// const response = await fetch(`${API_BASE_URL}/get-rounds?word=${encodeURIComponent(searchWords)}`);
+			// const data: { topGuesses: string[], similarity: number[] } = await response.json();
+			instructions += `What single word relates to both '${previousUserWord}' and '${previousAiWord}'?` + (warn ? `FORBIDDEN WORDS: ${warn}!` : '')
+			// roundInput = `\n\nLikely words based on previous games: ${data.topGuesses?.map((guess, index) => `${guess} (score: ${data.similarity[index]})`).join(', ')} `
 		}
 		else {
 			const seed = 'abcdefghijklmnopqrstuvwy'.split('').sort(() => 0.5 - Math.random()).join('').substring(0, 16)
 			const randNum = Math.floor(Math.random() * 5) + 2
-			agentPrompt = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least one other letter from the following: '${seed.substring(2)}'. The only exception to these rules is if no words can be made with the assigned letters. In that case, create any word. `
+			roundInput = `\n\nThis is the first round. Create your word. It should be a single English noun, verb, adverb, or adjective. It must start with the letter '${seed[0]}'. Either the second or third letter must be '${seed[1]}'. Use at least one other letter from the following: '${seed.substring(2)}'. The only exception to these rules is if no words can be made with the assigned letters. In that case, create any word. `
 			console.log({seed: `${seed}`, randNum: `${randNum}`})
 		}
 
-		prompt += `\n\n# *STRICT RULE: Your response must contain only a single word, no other text. Never use any previous round's words.*`
+		instructions += `\n\n# *STRICT RULE: Your response must be only a single word. Do not use any previous round's words.*`
 
 
 		// Generate guess
@@ -248,15 +247,17 @@ const MindMeld: React.FC = () => {
 			model: "gpt-4.1-mini",
 			temperature: 0.9,
 			max_output_tokens: 16,
-			instructions: prompt,
-			input: [{ role: "system", content: agentPrompt }],
+			instructions: instructions,
+			input: [{ role: "assistant", content: roundInput }],
 		});
 		const aiGuess = guess.output_text || 'ERROR: No guess returned'
 		if (checkIfPreviouslyUsed(aiGuess,previousUserWord,previousAiWord)) {
 			warn = warn.includes(aiGuess) ? warn : `${aiGuess},${warn}`
-			console.warn(`Already used: ${aiGuess}`)
+			console.warn(`Attempting to use previously used word, re-generating...`)
+			console.time('Time to re-generate guess')
 			return await generateAiGuess(previousUserWord, previousAiWord, warn)
 		}
+		console.timeEnd('Time to generate guess')
 		currentAiGuessRef.current = aiGuess.toLowerCase();
 		isGeneratingRef.current = false;
 		return aiGuess;
@@ -264,14 +265,15 @@ const MindMeld: React.FC = () => {
 
 	const checkForMatch = async (userGuess: string, aiGuess: string) => {
 		let prompt = `Word 1: ${userGuess}\nWord 2: ${aiGuess}`
+		console.time('Time to check for match')
 		const guess = await openai.responses.create({
-			model: "gpt-4o-mini",
+			model: "gpt-4.1-nano",
 			temperature: 0.0,
 			max_output_tokens: 16,
 			instructions: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`.",
 			input: prompt,
 		});
-
+		console.timeEnd('Time to check for match')
 		return guess.output_text === 'true';
 	};
 
@@ -344,7 +346,9 @@ const MindMeld: React.FC = () => {
 			if (await checkForMatch(currentUserGuess, currentAiGuessRef.current)) {
 				// Round is won, now check which words are new
 				try {
+					console.time('Time to fetch words')
 					const data = await response('get-all-words');
+					console.timeEnd('Time to fetch words')
 					console.log("Words from database:", data);
 					if (data && data.uniqueWords) {
 						const validWords = data.uniqueWords.filter((word: string | null) => word !== null)
@@ -446,6 +450,7 @@ const MindMeld: React.FC = () => {
 
 	// MARK: Database -> Now handled by backend
 	const recordRoundToDatabase = async (finalCorrectGuess: string) => {
+		console.time('Time to record round to database')
 		try {
 			const response = await fetch(`${API_BASE_URL}/record-round`, {
 				method: 'POST',
@@ -471,8 +476,10 @@ const MindMeld: React.FC = () => {
 		} catch (error) {
 			console.error("Error sending data to backend API:", error);
 		}
+		console.timeEnd('Time to record round to database')
 	}
 
+	// MARK: Effect Hooks
 	// Call animateGrid once on component load
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
@@ -553,7 +560,7 @@ const MindMeld: React.FC = () => {
 								Guesses were <span className='guess-words'>{prevUserWord}</span> and <span className='guess-words'>{prevAiWord}</span>
 							</p>
 						)}
-						<div className='input-group'>
+						<div className='input-group loading'>
 							<input
 								autoComplete='off'
 								type="text"
@@ -570,7 +577,7 @@ const MindMeld: React.FC = () => {
 
 				{gameState === 'resetting' && (
 					<div className="game-controls">
-						<p className="prompt">Waiting for AI...</p>
+						<p className="prompt loading">Waiting for AI...</p>
 					</div>
 				)}
 
