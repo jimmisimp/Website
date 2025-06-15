@@ -1,14 +1,13 @@
-// netlify/functions/record-round.js
+// utils/create_embeddings.js
 const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
 const { DataAPIClient, vector } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
-// --- Initialize clients ---
-const astraToken = 'AstraCS:fXArkexfGFQZjvbydhvCGYZk:75720366913a3380f476b220dc692249660f4e2d3cdfb99598f26f33302b4107'
-const astraEndpoint = 'https://0c55d58d-a1b2-43ad-bab1-1375f4322934-us-east1.apps.astra.datastax.com'
-const openaiApiKey = 'sk-proj-NQUKwdctzvji3lxjkMyfT3BlbkFJW5yhRwwFVTpMhFkADp0b'
+const astraToken = process.env.REACT_APP_ASTRA_DB_TOKEN;
+const astraEndpoint = process.env.REACT_APP_ASTRA_DB_ID;
+const openaiApiKey = process.env.REACT_APP_OPENAIKEY;
 
 // --- Basic validation ---
 if (!astraToken || !astraEndpoint || !openaiApiKey) {
