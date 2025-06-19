@@ -8,7 +8,6 @@
 # testing
 /utils
 /tests
-/scripts
 
 # production
 /build
