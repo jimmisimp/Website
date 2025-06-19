@@ -30,13 +30,13 @@ export const checkIfValidWord = async (
     roundResults: RoundResult[], 
     dictionarySet: Set<string>,
     ...args: any[]
-): Promise<boolean> => {
+): Promise<[boolean, string]> => {
     checkedWord = checkedWord.toLowerCase().trim();
     // Check if word is in dictionary
     const dictionary = dictionarySet;
     if (!dictionary.has(checkedWord)) {
         console.log(`Word "${checkedWord}" not found in dictionary`);
-        return false;
+        return [false, 'dictionary'];
     }
 
     // Check against previously used words
@@ -51,18 +51,18 @@ export const checkIfValidWord = async (
     // Check for exact matches or suffix variations
     for (const usedWord of roundWords) {
         if (checkedWord === usedWord) {
-            return false;
+            return [false, 'used'];
         }
 
         // Check suffix variations
         for (const suffix of suffixes) {
             if (checkedWord === usedWord + suffix || usedWord === checkedWord + suffix) {
-                return false;
+                return [false, 'suffix'];
             }
         }
     }
 
-    return true;
+    return [true, ''];
 };
 
     export const generateWordHtml = (

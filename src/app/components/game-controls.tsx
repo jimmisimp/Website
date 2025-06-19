@@ -37,7 +37,7 @@ export const gameAwaitingUserGuess = (handleSubmitGuess: () => void, handleKeyPr
 			</button>
 		</div>
 		<span hidden id='input-error' className='error-message'>
-			Invalid word. It has either been used before or is not in the dictionary.
+			Error message.
 		</span>
 	</div>
 )

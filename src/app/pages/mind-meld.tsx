@@ -41,14 +41,21 @@ export const MindMeld: React.FC = () => {
         gameState.resetGame();
         
         try {
-            const newAiGuess = await generateAiGuess(null, null);
-            gameState.currentAiGuessRef.current = newAiGuess.toLowerCase();
+            let newGuess = await generateAiGuess(null, null);
+            const badGuesses = [];
+            while ((await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet))[0] === false) {
+                badGuesses.push(newGuess);
+                newGuess = await generateAiGuess(newGuess, badGuesses.join(', '));
+            }
+            gameState.currentAiGuessRef.current = newGuess.toLowerCase();
             gameState.setGameState('awaitingUserGuess');
             animation.animateGrid();
         } catch (error) {
             console.error("Error starting game:", error);
             gameState.setGameMessages(['Error starting game. Please try again.']);
             gameState.setGameState('idle');
+        } finally {
+            gameState.isGeneratingRef.current = false;
         }
     };
 
@@ -56,18 +63,23 @@ export const MindMeld: React.FC = () => {
         if (gameState.gameState !== 'awaitingUserGuess' || !gameState.userInput.trim()) return;
         
         // Check if word was previously used
-        if (await checkIfValidWord(
+        const [isValid, errorType] = await checkIfValidWord(
             gameState.userInput.trim(), 
             gameState.roundResults, 
             dictionarySet,
             gameState.prevUserWord, 
             gameState.prevAiWord
-        ) === false ) {
+        );
+            
+        if (!isValid) {
             const input = utils.$('#user-input')[0];
             if (input) {
                 input.classList.add('error');
                 const errorMessage = utils.$('#input-error')[0];
-                if (errorMessage) (errorMessage as HTMLElement).hidden = false;
+                if (errorMessage){
+                    errorMessage.textContent = errorType === 'used' ? 'Word was used previously.' : 'Word was not found in the dictionary.';
+                    (errorMessage as HTMLElement).hidden = false;
+                }
             }
             return;
         }
@@ -101,7 +113,7 @@ export const MindMeld: React.FC = () => {
             }
         } catch (error) {
             console.error("Error processing guess:", error);
-            gameState.setGameMessages(prev => [...prev, "Error communicating with AI. Reload the page and try again."]);
+            gameState.setGameMessages(["Error communicating with AI. Reload the page and try again."]);
             gameState.setGameState('idle');
         }
     };
@@ -163,13 +175,12 @@ export const MindMeld: React.FC = () => {
         gameState.setPrevAiWord(gameState.currentAiGuessRef.current);
         gameState.setGameMessages(turnMessages);
         gameState.setRound(prev => prev + 1);
-        gameState.setGameState('awaitingUserGuess');
 
         // Generate new AI guess for next round
         try {
             let newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current);
             const badGuesses = [];
-            while (await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet) === false) {
+            while ((await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet))[0] === false) {
                 badGuesses.push(newGuess);
                 newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current, badGuesses.join(', '));
             }
@@ -177,6 +188,7 @@ export const MindMeld: React.FC = () => {
         } catch (error) {
             console.error("Error generating AI guess:", error);
         } finally {
+            gameState.setGameState('awaitingUserGuess');
             gameState.isGeneratingRef.current = false;
         }
     };

@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=swap')
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@700&display=swap')
 
-$material-base: rgb(247, 238, 253)
+$material-base: rgb(221, 213, 226)
 $material-inset: #cfcece
 $material-emphasis: #adcdfc
 
@@ -16,8 +16,8 @@ $font-mono: 'Anonymous Pro', Courier, monospace
 $color-red-1: #ff4c4c
 $color-green-1: #5fc95f
 $color-indigo-0: rgb(196, 167, 214)
-$color-indigo-1: rgb(96, 70, 112)
-$color-indigo-2: rgb(55, 33, 68)
+$color-indigo-1: rgb(130, 81, 161)
+$color-indigo-2: rgb(70, 40, 90)
 $color-indigo-3: #1b0e22
 
 $s-0-25: 2px
@@ -124,7 +124,8 @@ fieldset
         outline: 2px solid $color-indigo-3
     &:disabled
         background-color: $color-indigo-0
-        color: $text-white
+        color: $text-hover
+        opacity: 0.5
         cursor: default
     .pulse
         position: absolute
@@ -248,7 +249,7 @@ input
         font-weight: 400
         font-family: $font-block
         font-display: block
-        text-shadow: $s-2 $s-2 0 $color-indigo-3,-$s-2 $s-2 0 $color-indigo-3, -$s-2 -$s-2 0 $color-indigo-3, $s-2 -$s-2 0 $color-indigo-3, $s-2 0px 0 $color-indigo-3, -$s-2 0px 0 $color-indigo-3, 0px $s-2 0 $color-indigo-3, 0px -$s-2 0 $color-indigo-3
+        text-shadow: $s-2 $s-2 0 $color-indigo-3,(-$s-2) $s-2 0 $color-indigo-3, (-$s-2) (-$s-2) 0 $color-indigo-3, $s-2 (-$s-2) 0 $color-indigo-3, $s-2 0px 0 $color-indigo-3, (-$s-2) 0px 0 $color-indigo-3, 0px $s-2 0 $color-indigo-3, 0px (-$s-2) 0 $color-indigo-3
         @media (max-width: 800px)
             font-size: 5rem
         @media (min-width: 800px)

@@ -82,6 +82,7 @@
     "start:frontend": "node scripts/start.js",
     "start:backend": "node src/server.js",
     "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "dev": "concurrently \"npm run start:frontend\" \"npx netlify dev\"",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
     "test:backend": "jest tests/"
