@@ -1,3 +1,3 @@
-export * from './text-generator';
-export * from './mind-meld';
+export * from './components';
+export * from './pages';
 export * from './main';

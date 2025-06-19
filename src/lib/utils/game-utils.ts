@@ -62,7 +62,6 @@ export const checkIfValidWord = async (
                 return false;
             }
         }
-        return true;
     }
 
     return true;

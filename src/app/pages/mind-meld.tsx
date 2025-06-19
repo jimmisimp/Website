@@ -64,6 +64,7 @@ export const MindMeld: React.FC = () => {
             gameState.prevUserWord, 
             gameState.prevAiWord
         ) === false ) {
+            console.log('Word was previously used');
             gameState.setGameState('awaitingUserGuess');
             const input = utils.$('#user-input')[0];
             if (input) {
@@ -99,8 +100,8 @@ export const MindMeld: React.FC = () => {
             }
         } catch (error) {
             console.error("Error processing guess:", error);
-            gameState.setGameMessages(prev => [...prev, "Error communicating with AI. Please try again."]);
-            gameState.setGameState('awaitingUserGuess');
+            gameState.setGameMessages(prev => [...prev, "Error communicating with AI. Reload the page and try again."]);
+            gameState.setGameState('idle');
         }
     };
 
@@ -165,7 +166,12 @@ export const MindMeld: React.FC = () => {
 
         // Generate new AI guess for next round
         try {
-            const newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current);
+            let newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current);
+            const badGuesses = [];
+            while (await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet) === false) {
+                badGuesses.push(newGuess);
+                newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current, badGuesses.join(', '));
+            }
             gameState.currentAiGuessRef.current = newGuess.toLowerCase();
         } catch (error) {
             console.error("Error generating AI guess:", error);

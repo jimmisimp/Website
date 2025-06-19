@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { GameState } from './types';
+import { GameState } from '@/lib/types';
 import { animate, stagger, utils } from 'animejs';
 
 interface AnimatedGridProps {

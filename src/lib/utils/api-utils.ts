@@ -61,7 +61,7 @@ export const generateAiGuess = async (
         instructions: instructions,
         input: [{ role: "assistant", content: roundInput }],
     });
-    
+
     const aiGuess = guess.output_text || 'ERROR: No guess returned';
     console.timeEnd('Time to generate guess');
     
