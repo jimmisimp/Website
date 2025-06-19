@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap')
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&display=swap')
-@import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=block')
+@import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=swap')
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@700&display=swap')
 
 $material-base: rgb(247, 238, 253)
@@ -20,6 +19,21 @@ $color-indigo-0: rgb(196, 167, 214)
 $color-indigo-1: rgb(96, 70, 112)
 $color-indigo-2: rgb(55, 33, 68)
 $color-indigo-3: #1b0e22
+
+$s-0-25: 2px
+$s-0-5: 4px
+$s-1: 8px
+$s-1-5: 12px
+$s-2: 16px
+$s-2-5: 20px
+$s-3: 24px
+$s-4: 32px
+$s-5: 40px
+$s-6: 48px
+$s-7: 56px
+$s-8: 64px
+$s-9: 72px
+$s-10: 80px
 
 :root
     --color-red-1: #{$color-red-1}
@@ -50,11 +64,11 @@ fieldset
     justify-items: center
     text-align: center
     margin: auto
-    padding: 8px
+    padding: $s-1
     max-width: 640px
     width: 100%
     font-family: $font-block
-    gap: 4px
+    gap: $s-0-5
     &.mind-meld-wrapper
         margin: 0px
         padding: 0px
@@ -70,15 +84,15 @@ fieldset
     flex-direction: column
     align-items: stretch
     width: 100%
-    padding-bottom: 48px
-    gap: 8px
+    padding-bottom: $s-6
+    gap: $s-1
 
 .button-wrapper
     display: flex
     justify-content: center
     width: 100%
-    margin-top: 24px
-    gap: 8px
+    margin-top: $s-3
+    gap: $s-1
 
 .name
     font-size: 3rem
@@ -86,18 +100,18 @@ fieldset
 
 .guy
     width: 200px
-    margin-top: 32px
-    margin-bottom: 16px
+    margin-top: $s-3
+    margin-bottom: $s-2
 
 .main-button
     background-color: $color-indigo-1
-    border-radius: 4px
+    border-radius: $s-0-5
     border: none
     font-family: $font-block
     font-weight: 400
     letter-spacing: 0.25px
     font-size: 1.5rem
-    padding: 12px 20px
+    padding: $s-1-5 $s-2-5
     color: $color-indigo-3
     cursor: pointer
     transition: all 300ms ease
@@ -117,7 +131,7 @@ fieldset
         top: 0
         left: 0
         z-index: -99
-        border-radius: 4px
+        border-radius: $s-0-5
         background-color: #ffffff30
         animation: pulse 4s infinite
         width: 100%
@@ -131,15 +145,15 @@ fieldset
 .content-block
     display: flex
     flex-direction: column
-    margin-top: 8px
+    margin-top: $s-1
     align-items: flex-start
     font-family: $font-sans
     color: $text-base
     font-weight: 500
-    gap: 8px
-    padding: 16px
+    gap: $s-1
+    padding: $s-2
     background-color: $material-base
-    border-radius: 8px
+    border-radius: $s-1
     .generated-text
         line-height: 150%
         text-align: left
@@ -150,15 +164,15 @@ fieldset
     display: flex
     justify-content: center
     width: 100%
-    gap: 8px
+    gap: $s-1
 
 input
     font-family: $font-sans
     flex-grow: 1
     font-size: 1rem
-    padding: 8px
+    padding: $s-1
     border: none
-    border-radius: 4px
+    border-radius: $s-0-5
     outline: 2px solid $color-indigo-0
     &:disabled
         color: $text-white
@@ -176,30 +190,30 @@ input
     font-size: .9rem
     flex-direction: column
     font-family: $font-sans
-    border-radius: 16px
+    border-radius: $s-2
 
 .color-cost
     font-size: 1rem
-    margin-top: 12px
-    margin-bottom: 8px
+    margin-top: $s-1-5
+    margin-bottom: $s-1
     font-family: $font-block
 
 .link
     font-size: 1rem
     font-weight: 500
-    margin: 16px
+    margin: $s-2
     font-family: $font-sans
     a
-        padding: 2px 4px
-        border-radius: 4px
+        padding: 2px $s-0-5
+        border-radius: $s-0-5
 
 .avatar-container
     display: flex
     flex-direction: row
-    gap: 8px
-    margin-top: 24px
+    gap: $s-1
+    margin-top: $s-3
     .avatar
-        width: 24px
+        width: $s-3
         border-radius: 6px
     .avatar-label
         font-family: $font-block
@@ -216,8 +230,8 @@ input
     font-family: $font-sans
     font-weight: 500
     font-size: 1.5rem
-    gap: 4px
-    padding-top: 8px
+    gap: $s-0-5
+    padding-top: $s-1
     min-height: 480px
     color: $material-base
     @media (max-width: 800px)
@@ -234,7 +248,7 @@ input
         font-weight: 400
         font-family: $font-block
         font-display: block
-        text-shadow: 16px 16px 0 $color-indigo-3,-16px 16px 0 $color-indigo-3, -16px -16px 0 $color-indigo-3, 16px -16px 0 $color-indigo-3, 16px 0px 0 $color-indigo-3, -16px 0px 0 $color-indigo-3, 0px 16px 0 $color-indigo-3, 0px -16px 0 $color-indigo-3
+        text-shadow: $s-2 $s-2 0 $color-indigo-3,-$s-2 $s-2 0 $color-indigo-3, -$s-2 -$s-2 0 $color-indigo-3, $s-2 -$s-2 0 $color-indigo-3, $s-2 0px 0 $color-indigo-3, -$s-2 0px 0 $color-indigo-3, 0px $s-2 0 $color-indigo-3, 0px -$s-2 0 $color-indigo-3
         @media (max-width: 800px)
             font-size: 5rem
         @media (min-width: 800px)
@@ -243,19 +257,19 @@ input
         display: flex
         flex-direction: column
         align-items: center
-        gap: 4px
-        padding: 16px
+        gap: $s-0-5
+        padding: $s-2
         .timer
-            font-size: 20px
+            font-size: $s-2-5
             background-color: $color-indigo-3
-            border-radius: 8px
-            padding: 12px
+            border-radius: $s-1
+            padding: $s-1-5
             #timerDisplay
                 font-weight: 700
                 font-family: $font-mono
-                padding: 4px 8px
+                padding: $s-0-5 $s-1
                 background-color: $color-indigo-2
-                border-radius: 4px
+                border-radius: $s-0-5
                 &.time-running-out
                     color: $color-red-1
 
@@ -263,19 +277,19 @@ input
             display: flex
             flex-direction: column
             align-items: center
-            gap: 8px
+            gap: $s-1
             font-size: 1rem
-            padding: 16px
+            padding: $s-2
             background-color: $color-indigo-3
-            border-radius: 8px
-            padding: 12px
+            border-radius: $s-1
+            padding: $s-1-5
             .prev-words-container
                 display: flex
                 flex-direction: row
                 align-items: center
                 flex-wrap: wrap
                 max-width: 520px
-                gap: 8px
+                gap: $s-1
                 .prev-words-group
                     display: flex
                     flex-direction: row
@@ -284,20 +298,20 @@ input
                     .prev-words
                         position: relative
                         margin: 0px
-                        padding: 4px 8px
+                        padding: $s-0-5 $s-1
                         &.prev-words-user
                             border: 1px solid $color-indigo-0
-                            border-radius: 4px 0px 0px 4px
+                            border-radius: $s-0-5 0px 0px $s-0-5
                             color: $color-indigo-0
                         &.prev-words-ai
                             border: 1px solid $color-indigo-1
                             border-left: none
-                            border-radius: 0px 4px 4px 0px
+                            border-radius: 0px $s-0-5 $s-0-5 0px
                             color: $color-indigo-0
                         &.prev-words-match
                             background-color: $color-green-1
                             color: $color-indigo-3
-                            border-radius: 4px
+                            border-radius: $s-0-5
                         .new-badge
                             position: absolute
                             z-index: 100
@@ -306,7 +320,7 @@ input
                             font-size: 0.6rem
                             background-color: $color-indigo-0
                             color: $color-indigo-3
-                            padding: 1px 4px
+                            padding: 1px $s-0-5
                             border-radius: 3px
                             font-weight: bold
                             opacity: 0
@@ -320,27 +334,27 @@ input
             display: flex
             flex-direction: column
             align-items: center
-            gap: 8px
+            gap: $s-1
             p
                 margin: 0px
             .input-group
                 background-color: $color-indigo-3
-                border-radius: 8px
-                padding: 12px
+                border-radius: $s-1
+                padding: $s-1-5
             .prompt
                 font-size: 1rem
-                gap: 4px
+                gap: $s-0-5
                 background-color: $color-indigo-3
-                border-radius: 8px
-                padding: 12px
+                border-radius: $s-1
+                padding: $s-1-5
                 .guess-words
                     display: inline-flex
                     flex-direction: row
                     align-items: center
                     background-color: $color-indigo-1
                     color: $color-indigo-3
-                    border-radius: 4px
-                    padding: 4px 8px
+                    border-radius: $s-0-5
+                    padding: $s-0-5 $s-1
                     font-weight: 700
 
     #new-words-count
@@ -348,17 +362,17 @@ input
         font-weight: 700
         background-color: $color-indigo-0
         color: $color-indigo-3
-        padding: 2px 4px
-        margin-left: 4px
-        border-radius: 4px
+        padding: 2px $s-0-5
+        margin-left: $s-0-5
+        border-radius: $s-0-5
 
 .error-message
     font-size: 0.8rem
     font-weight: 500
     background-color: $color-red-1
     color: $text-white
-    padding: 2px 4px
-    border-radius: 4px
+    padding: 2px $s-0-5
+    border-radius: $s-0-5
 
 .wave-container
     display: grid
