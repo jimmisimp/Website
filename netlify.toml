@@ -18,9 +18,8 @@
 [[headers]]
 	for = "*.txt"
 	[headers.values]
-		# Cache text files for longer and ensure compression
+		# Cache text files for longer - Netlify will handle gzip automatically
 		Cache-Control = "public, max-age=86400"
-		Content-Encoding = "gzip"
 
 [[redirects]]
 	from = "/api/*"
