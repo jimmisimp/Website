@@ -8,6 +8,20 @@
 	node_bundler = "nft"
 	external_node_modules = ["@datastax/astra-db-ts"]
 
+# Enable compression for better performance
+[[headers]]
+	for = "/*"
+	[headers.values]
+		# Enable gzip compression
+		Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+	for = "*.txt"
+	[headers.values]
+		# Cache text files for longer and ensure compression
+		Cache-Control = "public, max-age=86400"
+		Content-Encoding = "gzip"
+
 [[redirects]]
 	from = "/api/*"
 	to = "/.netlify/functions/:splat"
