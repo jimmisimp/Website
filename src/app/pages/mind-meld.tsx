@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { utils } from 'animejs';
+import { gameIdle, gameAwaitingUserGuess, gameWaitingForAI, gameResetting, gameRoundLost, gameRoundWon, gameAwaitingRoundWon } from '@/app/components';
 import { useGameState, useAnimation, useTimer } from '@/lib/hooks';
 import { apiRequest, generateAiGuess, checkForMatch, recordRoundToDatabase, checkIfValidWord, loadDictionary } from '@/lib/utils';
 import { 
@@ -54,8 +55,6 @@ export const MindMeld: React.FC = () => {
     const handleSubmitGuess = async () => {
         if (gameState.gameState !== 'awaitingUserGuess' || !gameState.userInput.trim()) return;
         
-        gameState.setGameState('resetting');
-
         // Check if word was previously used
         if (await checkIfValidWord(
             gameState.userInput.trim(), 
@@ -64,20 +63,21 @@ export const MindMeld: React.FC = () => {
             gameState.prevUserWord, 
             gameState.prevAiWord
         ) === false ) {
-            console.log('Word was previously used');
-            gameState.setGameState('awaitingUserGuess');
             const input = utils.$('#user-input')[0];
             if (input) {
                 input.classList.add('error');
-                const errorMessage = utils.$('.error-message')[0];
-                if (errorMessage) errorMessage.classList.remove('hidden');
+                const errorMessage = utils.$('#input-error')[0];
+                if (errorMessage) (errorMessage as HTMLElement).hidden = false;
             }
             return;
         }
-
+        
+        gameState.setGameState('awaitingUserGuess');
+        
         const currentUserGuess = gameState.userInput.trim().toLowerCase();
         gameState.setUserInput('');
-
+        
+        gameState.setGameState('resetting');
         // Wait for AI generation to complete
         while (gameState.isGeneratingRef.current) {
             gameState.setGameState('waitingForAI');
@@ -94,6 +94,7 @@ export const MindMeld: React.FC = () => {
 
             // Check if words match
             if (await checkForMatch(currentUserGuess, gameState.currentAiGuessRef.current)) {
+                gameState.setGameState('awaitingRoundWon');
                 await handleRoundWon(currentUserGuess, turnMessages);
             } else {
                 await handleRoundContinue(currentUserGuess, turnMessages);
@@ -210,111 +211,25 @@ export const MindMeld: React.FC = () => {
     const renderGameControls = () => {
         switch (gameState.gameState) {
             case 'idle':
-                return (
-                    <div className="game-controls">
-                        <div className='input-group'>
-                            <button className='main-button' onClick={handleStartGame}>
-                                Start Game
-                            </button>
-                        </div>
-                    </div>
-                );
+                return gameIdle(handleStartGame);
 
             case 'awaitingUserGuess':
-                return (
-                    <div className="game-controls">
-                        {gameState.round > 1 && gameState.prevUserWord && gameState.prevAiWord && (
-                            <p className="prompt">
-                                Guesses were <span className='guess-words'>{gameState.prevUserWord}</span> and <span className='guess-words'>{gameState.prevAiWord}</span>
-                            </p>
-                        )}
-                        <div className='input-group'>
-                            <input
-                                autoComplete='off'
-                                id="user-input"
-                                type="text"
-                                maxLength={32}
-                                value={gameState.userInput}
-                                onChange={gameState.handleInputChange}
-                                onKeyPress={handleKeyPress}
-                                placeholder={gameState.round === 1 ? "Enter a word" : "Enter your guess"}
-                                autoFocus
-                            />
-                            <span hidden className='error-message'>
-                                You may not guess a previously guessed word. Please try again.
-                            </span>
-                            <button 
-                                className='main-button' 
-                                onClick={handleSubmitGuess} 
-                                disabled={!gameState.userInput.trim()}
-                            >
-                                Guess
-                            </button>
-                        </div>
-                    </div>
-                );
+                return gameAwaitingUserGuess(handleSubmitGuess, handleKeyPress, gameState.round, gameState.prevUserWord, gameState.prevAiWord, gameState.userInput, gameState.handleInputChange);
 
             case 'waitingForAI':
-                return (
-                    <div className="game-controls">
-                        {gameState.round > 1 && gameState.prevUserWord && gameState.prevAiWord && (
-                            <p className="prompt">
-                                Guesses were <span className='guess-words'>{gameState.prevUserWord}</span> and <span className='guess-words'>{gameState.prevAiWord}</span>
-                            </p>
-                        )}
-                        <div className='input-group loading'>
-                            <input
-                                autoComplete='off'
-                                type="text"
-                                value={gameState.userInput}
-                                placeholder="Guess submitted"
-                                disabled
-                            />
-                            <button className='main-button' disabled>
-                                Wait...
-                            </button>
-                        </div>
-                    </div>
-                );
+                return gameWaitingForAI(gameState.round, gameState.prevUserWord, gameState.prevAiWord, gameState.userInput);
 
             case 'resetting':
-                return (
-                    <div className="game-controls">
-                        <p className="prompt loading">Waiting for AI...</p>
-                    </div>
-                );
+                return gameResetting();
 
             case 'roundLost':
-                return (
-                    <div className="game-controls">
-                        <p className="prompt">Time's up! You made {gameState.round - 1} guesses.</p>
-                        <div className='input-group'>
-                            <button className='main-button' onClick={handleStartGame}>
-                                Play again?
-                            </button>
-                        </div>
-                    </div>
-                );
+                return gameRoundLost(handleStartGame, gameState.round);
+
+            case 'awaitingRoundWon':
+                return gameAwaitingRoundWon();
 
             case 'roundWon':
-                return (
-                    <div className="game-controls">
-                        <p id="win-count" className="prompt">
-                            Melded in {gameState.round} guesses! 
-                            <span id="new-words-count">
-                                <span className="new-words-badge">★</span> {gameState.newWords.length} new words
-                            </span>
-                        </p>
-                        <div className='input-group'>
-                            <button className='main-button' onClick={handleStartGame}>
-                                Play again?
-                            </button>
-                        </div>
-                    </div>
-                );
-
-            default:
-                return null;
+                return gameRoundWon(handleStartGame, gameState.round, gameState.newWords);
         }
     };
 

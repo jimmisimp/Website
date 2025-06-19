@@ -1,4 +1,4 @@
-export type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'roundWon' | 'roundLost' | 'resetting';
+export type GameState = 'idle' | 'awaitingUserGuess' | 'waitingForAI' | 'awaitingRoundWon' | 'roundWon' | 'roundLost' | 'resetting';
 
 export interface RoundResult {
     round: number;

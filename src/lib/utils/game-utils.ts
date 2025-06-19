@@ -51,14 +51,12 @@ export const checkIfValidWord = async (
     // Check for exact matches or suffix variations
     for (const usedWord of roundWords) {
         if (checkedWord === usedWord) {
-            console.log(`Word "${checkedWord}" already used exactly`);
             return false;
         }
 
         // Check suffix variations
         for (const suffix of suffixes) {
             if (checkedWord === usedWord + suffix || usedWord === checkedWord + suffix) {
-                console.log(`Word "${checkedWord}" is too similar to previously used "${usedWord}"`);
                 return false;
             }
         }
