@@ -3,6 +3,22 @@ import { useFeedItems, useColorUtils, useOpenAI } from '@/lib/hooks';
 import { ColorPalette } from '@/lib/types';
 import { GeneratingItem, FormItem, TextItem, PaletteItem, ButtonItem } from '@/lib/components';
 
+const animateText = (text: string, setText: (text: string) => void, delay: number = 80) => {
+    return new Promise<void>((resolve) => {
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i <= text.length) {
+                setText(text.slice(0, i*5));
+                i+=5;
+            } else {
+                setText(text);
+                clearInterval(interval);
+                resolve();
+            }
+        }, delay);
+    });
+};
+
 export const TextGenerator = () => {
     const { getTextColor } = useColorUtils();
     const { feedItems, addFeedItem, updateFeedItem, removeFeedItem, generateId } = useFeedItems();
@@ -25,23 +41,8 @@ export const TextGenerator = () => {
         // Add a generating feed item
         const genId = generateId();
         addFeedItem({ id: genId, type: 'generating', message: '' });
-        
-        const animateGenText = (text: string, setText: (text: string) => void) => {
-            return new Promise<void>((resolve) => {
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i <= text.length) {
-                        setText(text.slice(0, i));
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 50);
-            });
-        };
 
-        await animateGenText(
+        await animateText(
             "Generating a color palette...",
             (text: string) => updateFeedItem(genId, { message: text })
         );
@@ -79,23 +80,8 @@ export const TextGenerator = () => {
 
         const textId2 = generateId();
         addFeedItem({ id: textId2, type: 'text', content: '' });
-        
-        const animateText2 = (text: string, setText: (text: string) => void) => {
-            return new Promise<void>((resolve) => {
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i <= text.length) {
-                        setText(text.slice(0, i));
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 50);
-            });
-        };
 
-        await animateText2(
+        await animateText(
             "How fun... Actually, I made a game too. Try it out. The AI isn't me, and it's not very Adam-centric. But it's fun.",
             (text: string) => updateFeedItem(textId2, { content: text })
         );
@@ -111,23 +97,8 @@ export const TextGenerator = () => {
 
         const textId3 = generateId();
         addFeedItem({ id: textId3, type: 'text', content: '' });
-        
-        const animateText3 = (text: string, setText: (text: string) => void) => {
-            return new Promise<void>((resolve) => {
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i <= text.length) {
-                        setText(text.slice(0, i));
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 50);
-            });
-        };
 
-        await animateText3(
+        await animateText(
             "Anyway thanks for your interest. If you want to connect, check Adam out at LinkedIn.",
             (text: string) => updateFeedItem(textId3, { content: text })
         );
@@ -147,21 +118,6 @@ export const TextGenerator = () => {
         let textId = generateId();
         addFeedItem({ id: textId, type: 'text', content: '' });
         
-        const animateText = (text: string, setText: (text: string) => void) => {
-            return new Promise<void>((resolve) => {
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i <= text.length) {
-                        setText(text.slice(0, i));
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 50);
-            });
-        };
-
         await animateText(
             "Hello there! I'm Adamatic. Your friendly Adam-oriented AI.",
             (text: string) => updateFeedItem(textId, { content: text })
@@ -191,23 +147,8 @@ export const TextGenerator = () => {
 
         const textId2 = generateId();
         addFeedItem({ id: textId2, type: 'text', content: '' });
-        
-        const animateText2 = (text: string, setText: (text: string) => void) => {
-            return new Promise<void>((resolve) => {
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i <= text.length) {
-                        setText(text.slice(0, i));
-                        i++;
-                    } else {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 50);
-            });
-        };
 
-        await animateText2(
+        await animateText(
             "Let's have some fun. Think of something, anything, and I'll make a color palette from it.",
             (text: string) => updateFeedItem(textId2, { content: text })
         );

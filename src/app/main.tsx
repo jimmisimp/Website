@@ -1,8 +1,8 @@
-import '@/stylesheet.sass';
+import '@/lib/assets/stylesheet.sass';
 import { TextGenerator, MindMeld } from '@/app'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-function App() {
+export const Main = () => {
   return (
     <Router>
       <Routes>
@@ -26,5 +26,3 @@ function App() {
     </Router >
   );
 }
-
-export default App;

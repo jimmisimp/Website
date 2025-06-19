@@ -1,6 +1,7 @@
 [build]
-	command = "CI=false npm run build"
+	command = "npm run build"
 	publish = "build"
+	functions = "functions-build"
 
 [functions]
 	directory = "netlify/functions"

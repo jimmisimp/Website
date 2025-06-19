@@ -1,10 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { utils } from 'animejs';
-
 import { useGameState, useAnimation, useTimer } from '@/lib/hooks';
-import { apiRequest, generateAiGuess, checkForMatch, recordRoundToDatabase } from '@/lib/utils';
+import { apiRequest, generateAiGuess, checkForMatch, recordRoundToDatabase, checkIfValidWord, loadDictionary } from '@/lib/utils';
 import { 
-    checkIfPreviouslyUsed, 
     processNewWords, 
     generateGameMessages, 
     getColorTheme 
@@ -18,16 +16,21 @@ export const MindMeld: React.FC = () => {
     const colors = getColorTheme();
     const animation = useAnimation(gameState.gameState, colors);
     const isStarted = useRef<boolean>(false);
+    const [dictionarySet, setDictionarySet] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        loadDictionary().then(setDictionarySet);
+    }, []);
 
     // Timer with callback for when time runs out
-    const handleTimeUp = () => {
+    const handleTimeUp = useCallback(() => {
         gameState.setGameState('roundLost');
         gameState.setGameMessages(prev => [
             ...prev, 
             `<span class='prev-words prev-words-user'>${gameState.prevUserWord}</span><span class='prev-words prev-words-ai'>${gameState.prevAiWord}</span>`
         ]);
         animation.animateGrid('roundLost');
-    };
+    }, [gameState.setGameState, gameState.setGameMessages, gameState.prevUserWord, gameState.prevAiWord, animation]);
 
     useTimer(gameState.gameState, gameState.round, ROUND_LENGTH, handleTimeUp);
 
@@ -54,12 +57,13 @@ export const MindMeld: React.FC = () => {
         gameState.setGameState('resetting');
 
         // Check if word was previously used
-        if (checkIfPreviouslyUsed(
+        if (await checkIfValidWord(
             gameState.userInput.trim(), 
             gameState.roundResults, 
+            dictionarySet,
             gameState.prevUserWord, 
             gameState.prevAiWord
-        )) {
+        ) === false ) {
             gameState.setGameState('awaitingUserGuess');
             const input = utils.$('#user-input')[0];
             if (input) {

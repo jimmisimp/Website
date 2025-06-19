@@ -9,8 +9,14 @@ export const useTimer = (
     onTimeUp: () => void
 ) => {
     const timer = useRef<any>(null);
-    const $timeSec = utils.$('.time-vals')[0];
-    const $timeMil = utils.$('.time_secs')[0];
+    const gameStateRef = useRef<GameState>(gameState);
+    const roundRef = useRef<number>(round);
+    const onTimeUpRef = useRef(onTimeUp);
+    
+    // Update refs on every render
+    gameStateRef.current = gameState;
+    roundRef.current = round;
+    onTimeUpRef.current = onTimeUp;
 
     useEffect(() => {
         timer.current?.revert();
@@ -21,7 +27,10 @@ export const useTimer = (
             reversed: true,
             frameRate: 16,
             onUpdate: self => {
-                if (gameState === 'awaitingUserGuess' && round > 1) {
+                if (gameStateRef.current === 'awaitingUserGuess' && roundRef.current > 1) {
+                    const $timeSec = utils.$('.time-vals')[0];
+                    const $timeMil = utils.$('.time_secs')[0];
+                    
                     const timeString = self._iterationTime.toString();
                     const seconds = timeString.substring(0, timeString.length - 3).padStart(2, '0');
                     const milliseconds = timeString.substring(timeString.length - 3, timeString.length - 1).padStart(2, '0');
@@ -40,8 +49,8 @@ export const useTimer = (
                 }
             },
             onComplete: () => {
-                if (gameState === 'awaitingUserGuess' && round > 1) {
-                    onTimeUp();
+                if (gameStateRef.current === 'awaitingUserGuess' && roundRef.current > 1) {
+                    onTimeUpRef.current();
                 }
             }
         });
@@ -49,7 +58,7 @@ export const useTimer = (
         return () => {
             timer.current?.revert();
         };
-    }, [gameState, round, roundLength, onTimeUp, $timeSec, $timeMil]);
+    }, [round, roundLength]);
 
     return {
         timer: timer.current

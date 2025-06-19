@@ -6,8 +6,8 @@ export const useGameState = () => {
     const [round, setRound] = useState<number>(0);
     const [userInput, setUserInput] = useState<string>('');
     const [gameMessages, setGameMessages] = useState<string[]>([]);
-    const [prevUserWord, setPrevUserWord] = useState<string | null>(null);
-    const [prevAiWord, setPrevAiWord] = useState<string | null>(null);
+    const [prevUserWord, setPrevUserWord] = useState<string>('');
+    const [prevAiWord, setPrevAiWord] = useState<string>('');
     const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
     
     // Refs for managing state across async operations
@@ -23,8 +23,8 @@ export const useGameState = () => {
     const resetGame = () => {
         setRound(1);
         setGameState('resetting');
-        setPrevUserWord(null);
-        setPrevAiWord(null);
+        setPrevUserWord('');
+        setPrevAiWord('');
         setGameMessages(['Enter any word to begin.']);
         setRoundResults([]);
         setUserInput('');

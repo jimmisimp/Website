@@ -43,7 +43,7 @@ export const useTextAnimation = (textId: string) => {
                 resolve();
             }, maxDelay + 1500);
         });
-    }, []);
+    }, [textId]);
 
     return { animateText };
 }; 
