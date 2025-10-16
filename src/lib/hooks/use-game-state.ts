@@ -34,13 +34,6 @@ export const useGameState = () => {
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUserInput(event.target.value.toLowerCase());
-        if (event.target.classList.contains('error')) {
-            event.target.classList.remove('error');
-            const errorMessage = document.querySelector('.error-message');
-            if (errorMessage) {
-                errorMessage.classList.add('hidden');
-            }
-        }
     };
 
     return {

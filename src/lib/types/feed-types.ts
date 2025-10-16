@@ -24,6 +24,7 @@ export interface FormFeedItem extends FeedItemBase {
     placeholder: string;
     buttonText: string;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    disabled?: boolean;
 }
 
 export interface GeneratingFeedItem extends FeedItemBase {

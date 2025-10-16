@@ -1,20 +1,16 @@
 // netlify/functions/record-round.js
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') }); // Load .env from root for local testing
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { DataAPIClient, vector } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
-// Initialize clients
+// Initialize clients outside handler for connection reuse
 const astraToken = process.env.REACT_APP_ASTRA_DB_TOKEN;
 const astraEndpoint = process.env.REACT_APP_ASTRA_DB_ID;
 const openaiApiKey = process.env.REACT_APP_OPENAIKEY;
 
-// Basic validation
 if (!astraToken || !astraEndpoint || !openaiApiKey) {
 	console.error("Missing required environment variables!");
-	return {
-		statusCode: 500,
-		body: JSON.stringify({ message: 'Server configuration error.' }),
-	};
+	throw new Error('Server configuration error.');
 }
 
 const astraClient = new DataAPIClient(astraToken);
@@ -133,50 +129,66 @@ exports.handler = async (event, context) => {
 			console.warn("Could not determine max existing ID. Starting from 0. Error:", findError);
 		}
 
-		const rowsToInsert = [];
-		console.log(`Processing ${roundsWithCorrect.length} rounds for embedding and insertion...`);
-
+		// Prepare valid rounds for embedding
+		const validRounds = [];
 		for (const round of roundsWithCorrect) {
-			const currentId = nextId; // ID for this specific round
-
-			// Validate data needed for embedding
 			if (!round.userGuess || !round.aiGuess || !round.correctGuess) {
 				console.warn(`Skipping round number ${round.roundNumber} due to missing guess data: ${JSON.stringify(round)}`);
 				continue;
 			}
-
-			const embeddingInput = `${round.userGuess} + ${round.aiGuess} = ${round.correctGuess}`;
-
-			try {
-				// Generate embedding for this specific round
-				const embeddingResponse = await openai.embeddings.create({
-					model: "text-embedding-3-small",
-					input: embeddingInput,
-				});
-
-				if (!embeddingResponse.data || !embeddingResponse.data[0] || !embeddingResponse.data[0].embedding) {
-					console.error(`Failed to get valid embedding structure for round number ${round.roundNumber}: ${JSON.stringify(round)}`, embeddingResponse);
-					continue; // Skip row if embedding structure is invalid
-				}
-				const embeddingVector = vector(embeddingResponse.data[0].embedding);
-
-				// Prepare row using camelCase keys
-				rowsToInsert.push({
-					id: currentId,
-					roundNumber: round.roundNumber,
-					userWord: round.userGuess, // Ensure consistent naming
-					aiWord: round.aiGuess,     // Ensure consistent naming
-					correctGuess: round.correctGuess, // Ensure consistent naming
-					vector: embeddingVector,
-				});
-				nextId++; // Increment ID for the next round
-
-			} catch (embeddingError) {
-				console.error(`Failed to generate embedding for round number ${round.roundNumber} (ID ${currentId}):`, embeddingError);
-				// Optionally skip this round or halt execution
-				continue;
-			}
+			validRounds.push(round);
 		}
+
+		if (validRounds.length === 0) {
+			console.log("No valid rounds to process.");
+			return {
+				statusCode: 200,
+				body: JSON.stringify({ message: 'No valid rounds to process.' })
+			};
+		}
+
+		console.log(`Processing ${validRounds.length} rounds for batch embedding...`);
+
+		// Batch generate embeddings for all rounds in one API call
+		const embeddingInputs = validRounds.map(round => 
+			`${round.userGuess} + ${round.aiGuess} = ${round.correctGuess}`
+		);
+
+		let embeddingVectors;
+		try {
+			console.time('Batch embedding generation');
+			const embeddingResponse = await openai.embeddings.create({
+				model: "text-embedding-3-small",
+				input: embeddingInputs,
+			});
+			console.timeEnd('Batch embedding generation');
+
+			if (!embeddingResponse.data || embeddingResponse.data.length !== validRounds.length) {
+				console.error('Invalid batch embedding response structure');
+				return {
+					statusCode: 500,
+					body: JSON.stringify({ message: 'Failed to generate embeddings' })
+				};
+			}
+
+			embeddingVectors = embeddingResponse.data.map(item => vector(item.embedding));
+		} catch (embeddingError) {
+			console.error('Failed to generate batch embeddings:', embeddingError);
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ message: 'Failed to generate embeddings' })
+			};
+		}
+
+		// Prepare rows for insertion
+		const rowsToInsert = validRounds.map((round, idx) => ({
+			id: nextId + idx,
+			roundNumber: round.roundNumber,
+			userWord: round.userGuess,
+			aiWord: round.aiGuess,
+			correctGuess: round.correctGuess,
+			vector: embeddingVectors[idx],
+		}));
 
 		// --- Batch Insert into Database ---
 		if (rowsToInsert.length > 0) {

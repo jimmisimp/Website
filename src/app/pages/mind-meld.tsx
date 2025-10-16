@@ -1,195 +1,252 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { utils } from 'animejs';
-import { gameIdle, gameAwaitingUserGuess, gameWaitingForAI, gameResetting, gameRoundLost, gameRoundWon, gameAwaitingRoundWon } from '@/app/components';
+import {
+    gameIdle,
+    gameAwaitingUserGuess,
+    gameWaitingForAI,
+    gameResetting,
+    gameRoundLost,
+    gameRoundWon,
+    gameAwaitingRoundWon,
+} from '@/app/components';
 import { useGameState, useAnimation, useTimer } from '@/lib/hooks';
-import { apiRequest, generateAiGuess, checkForMatch, recordRoundToDatabase, checkIfValidWord, loadDictionary } from '@/lib/utils';
-import { 
-    processNewWords, 
-    generateGameMessages, 
-    getColorTheme 
+import {
+    apiRequest,
+    generateAiGuess,
+    checkForMatch,
+    recordRoundToDatabase,
+    checkIfValidWord,
+    loadDictionary,
+    processNewWords,
+    generateGameMessages,
+    getColorTheme,
 } from '@/lib/utils';
+import type { RoundResult } from '@/lib/types';
 
-// Configuration
 const ROUND_LENGTH = 25000;
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 export const MindMeld: React.FC = () => {
-    const gameState = useGameState();
+    const {
+        gameState: phase,
+        setGameState,
+        round,
+        setRound,
+        userInput,
+        setUserInput,
+        gameMessages,
+        setGameMessages,
+        prevUserWord,
+        setPrevUserWord,
+        prevAiWord,
+        setPrevAiWord,
+        roundResults,
+        setRoundResults,
+        setKnownWords,
+        newWords,
+        setNewWords,
+        animatedNewWords,
+        setAnimatedNewWords,
+        gameStateRef,
+        currentAiGuessRef,
+        isGeneratingRef,
+        resetGame,
+        handleInputChange,
+    } = useGameState();
+
     const colors = getColorTheme();
-    const animation = useAnimation(gameState.gameState, colors);
-    const isStarted = useRef<boolean>(false);
+    const animation = useAnimation(phase, colors);
     const [dictionarySet, setDictionarySet] = useState<Set<string>>(new Set());
+    const [inputError, setInputError] = useState<string | null>(null);
+    const isStarted = useRef(false);
 
     useEffect(() => {
         loadDictionary().then(setDictionarySet);
     }, []);
 
-    // Timer with callback for when time runs out
     const handleTimeUp = useCallback(() => {
-        gameState.setGameState('roundLost');
-        gameState.setGameMessages(prev => [
-            ...prev, 
-            `<span class='prev-words prev-words-user'>${gameState.prevUserWord}</span><span class='prev-words prev-words-ai'>${gameState.prevAiWord}</span>`
+        setGameState('roundLost');
+        setGameMessages(prev => [
+            ...prev,
+            `<span class='prev-words prev-words-user'>${prevUserWord}</span><span class='prev-words prev-words-ai'>${prevAiWord}</span>`,
         ]);
         animation.animateGrid('roundLost');
-    }, [gameState.setGameState, gameState.setGameMessages, gameState.prevUserWord, gameState.prevAiWord, animation]);
+    }, [setGameState, setGameMessages, prevUserWord, prevAiWord, animation]);
 
-    useTimer(gameState.gameState, gameState.round, ROUND_LENGTH, handleTimeUp);
+    useTimer(phase, round, ROUND_LENGTH, handleTimeUp);
 
-    // Game logic functions
-    const handleStartGame = async () => {
-        console.log('Starting game');
-        gameState.resetGame();
-        
-        try {
-            let newGuess = await generateAiGuess(null, null);
-            const badGuesses = [];
-            while ((await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet))[0] === false) {
-                badGuesses.push(newGuess);
-                newGuess = await generateAiGuess(newGuess, badGuesses.join(', '));
-            }
-            gameState.currentAiGuessRef.current = newGuess.toLowerCase();
-            gameState.setGameState('awaitingUserGuess');
-            animation.animateGrid();
-        } catch (error) {
-            console.error("Error starting game:", error);
-            gameState.setGameMessages(['Error starting game. Please try again.']);
-            gameState.setGameState('idle');
-        } finally {
-            gameState.isGeneratingRef.current = false;
+    const waitForAi = async () => {
+        if (!isGeneratingRef.current) return;
+        setGameState('waitingForAI');
+        while (isGeneratingRef.current) {
+            await sleep(80);
         }
     };
 
-    const handleSubmitGuess = async () => {
-        if (gameState.gameState !== 'awaitingUserGuess' || !gameState.userInput.trim()) return;
-        
-        // Check if word was previously used
-        const [isValid, errorType] = await checkIfValidWord(
-            gameState.userInput.trim(), 
-            gameState.roundResults, 
-            dictionarySet,
-            gameState.prevUserWord, 
-            gameState.prevAiWord
-        );
-            
-        if (!isValid) {
-            const input = utils.$('#user-input')[0];
-            if (input) {
-                input.classList.add('error');
-                const errorMessage = utils.$('#input-error')[0];
-                if (errorMessage){
-                    errorMessage.textContent = errorType === 'used' ? 'Word was used previously.' : 'Word was not found in the dictionary.';
-                    (errorMessage as HTMLElement).hidden = false;
-                }
+    const requestValidAiGuess = async (
+        previousUserWord: string | null,
+        previousAiWord: string | null,
+        results: RoundResult[],
+    ): Promise<string> => {
+        let guess = await generateAiGuess(previousUserWord, previousAiWord);
+        if (!dictionarySet.size) return guess.toLowerCase();
+
+        const blocked = new Set<string>();
+        const extraWords = [previousUserWord, previousAiWord].filter(Boolean) as string[];
+
+        while (true) {
+            const [isValid] = await checkIfValidWord(guess, results, dictionarySet, ...extraWords);
+            if (isValid || blocked.size > 25) {
+                return guess.toLowerCase();
             }
-            return;
+            blocked.add(guess.toLowerCase());
+            guess = await generateAiGuess(previousUserWord, previousAiWord, Array.from(blocked).join(', '));
         }
-        
-        gameState.setGameState('awaitingUserGuess');
-        
-        const currentUserGuess = gameState.userInput.trim().toLowerCase();
-        gameState.setUserInput('');
-        
-        gameState.setGameState('resetting');
-        // Wait for AI generation to complete
-        while (gameState.isGeneratingRef.current) {
-            gameState.setGameState('waitingForAI');
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+    };
+
+    const handleStartGame = async () => {
+        resetGame();
+        setInputError(null);
+        isGeneratingRef.current = true;
 
         try {
-            gameState.isGeneratingRef.current = true;
-            const turnMessages = gameState.roundResults.length > 0 
-                ? gameState.roundResults.map(result => 
-                    `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`
-                  )
-                : ['First round.'];
-
-            // Check if words match
-            if (await checkForMatch(currentUserGuess, gameState.currentAiGuessRef.current)) {
-                gameState.setGameState('awaitingRoundWon');
-                await handleRoundWon(currentUserGuess, turnMessages);
-            } else {
-                await handleRoundContinue(currentUserGuess, turnMessages);
-            }
+            const newGuess = await requestValidAiGuess(null, null, []);
+            currentAiGuessRef.current = newGuess;
+            setGameState('awaitingUserGuess');
+            animation.animateGrid();
         } catch (error) {
-            console.error("Error processing guess:", error);
-            gameState.setGameMessages(["Error communicating with AI. Reload the page and try again."]);
-            gameState.setGameState('idle');
+            console.error('Error starting game:', error);
+            setGameMessages(['Error starting game. Please try again.']);
+            setGameState('idle');
+        } finally {
+            isGeneratingRef.current = false;
         }
     };
 
     const handleRoundWon = async (currentUserGuess: string, turnMessages: string[]) => {
+        let latestNewWords = newWords;
         try {
             console.time('Time to fetch words');
             const data = await apiRequest('get-all-words');
             console.timeEnd('Time to fetch words');
-            
+
             if (data?.uniqueWords) {
                 const validWords = data.uniqueWords
                     .filter((word: string | null) => word !== null)
                     .map((word: string) => word.toLowerCase());
-                
-                gameState.setKnownWords(new Set(validWords));
-                
-                const newWordsFound = processNewWords(gameState.roundResults, currentUserGuess, validWords);
-                gameState.setNewWords(newWordsFound);
-                
-                const finalMessages = generateGameMessages(gameState.roundResults, currentUserGuess, validWords);
-                gameState.setGameMessages(finalMessages);
+
+                setKnownWords(new Set(validWords));
+
+                const newWordsFound = processNewWords(roundResults, currentUserGuess, validWords);
+                latestNewWords = newWordsFound;
+                setNewWords(newWordsFound);
+
+                const finalMessages = generateGameMessages(roundResults, currentUserGuess, validWords);
+                setGameMessages(finalMessages);
             }
         } catch (error) {
-            console.error("Failed to check for new words:", error);
-            gameState.setGameMessages([...turnMessages, `<span class='prev-words prev-words-match'>${currentUserGuess}</span>`]);
+            console.error('Failed to check for new words:', error);
+            setGameMessages([...turnMessages, `<span class='prev-words prev-words-match'>${currentUserGuess}</span>`]);
         }
-        
-        gameState.setGameState('roundWon');
+
+        const updatedResults: RoundResult[] = [
+            ...roundResults,
+            {
+                round,
+                userGuess: currentUserGuess,
+                aiGuess: currentAiGuessRef.current,
+            },
+        ];
+
+        setGameState('roundWon');
         animation.animateGrid('roundWon');
-        gameState.setRoundResults(prev => [...prev, { 
-            round: gameState.round, 
-            userGuess: currentUserGuess, 
-            aiGuess: gameState.currentAiGuessRef.current 
-        }]);
-        
-        await recordRoundToDatabase(gameState.roundResults, currentUserGuess);
-        gameState.isGeneratingRef.current = false;
-        
-        // Schedule animation of new word badges
+        setRoundResults(updatedResults);
+        await recordRoundToDatabase(updatedResults, currentUserGuess);
+        isGeneratingRef.current = false;
+
         setTimeout(() => {
-            animation.animateNewWordBadges(gameState.newWords, gameState.animatedNewWords);
-            gameState.setAnimatedNewWords(prev => {
+            animation.animateNewWordBadges(latestNewWords, animatedNewWords);
+            setAnimatedNewWords(prev => {
                 const updated = new Set(prev);
-                gameState.newWords.forEach(word => updated.add(word.toLowerCase()));
+                latestNewWords.forEach(word => updated.add(word.toLowerCase()));
                 return updated;
             });
         }, 1000);
     };
 
     const handleRoundContinue = async (currentUserGuess: string, turnMessages: string[]) => {
-        gameState.setRoundResults(prev => [...prev, { 
-            round: gameState.round, 
-            userGuess: currentUserGuess, 
-            aiGuess: gameState.currentAiGuessRef.current 
-        }]);
-        
-        gameState.setPrevUserWord(currentUserGuess);
-        gameState.setPrevAiWord(gameState.currentAiGuessRef.current);
-        gameState.setGameMessages(turnMessages);
-        gameState.setRound(prev => prev + 1);
+        const updatedResults: RoundResult[] = [
+            ...roundResults,
+            {
+                round,
+                userGuess: currentUserGuess,
+                aiGuess: currentAiGuessRef.current,
+            },
+        ];
 
-        // Generate new AI guess for next round
+        setRoundResults(updatedResults);
+        setPrevUserWord(currentUserGuess);
+        setPrevAiWord(currentAiGuessRef.current);
+        setGameMessages(turnMessages);
+        setRound(prev => prev + 1);
+
         try {
-            let newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current);
-            const badGuesses = [];
-            while ((await checkIfValidWord(newGuess, gameState.roundResults, dictionarySet))[0] === false) {
-                badGuesses.push(newGuess);
-                newGuess = await generateAiGuess(currentUserGuess, gameState.currentAiGuessRef.current, badGuesses.join(', '));
-            }
-            gameState.currentAiGuessRef.current = newGuess.toLowerCase();
+            currentAiGuessRef.current = await requestValidAiGuess(
+                currentUserGuess,
+                currentAiGuessRef.current,
+                updatedResults,
+            );
         } catch (error) {
-            console.error("Error generating AI guess:", error);
+            console.error('Error generating AI guess:', error);
         } finally {
-            gameState.setGameState('awaitingUserGuess');
-            gameState.isGeneratingRef.current = false;
+            setGameState('awaitingUserGuess');
+            isGeneratingRef.current = false;
+        }
+    };
+
+    const handleSubmitGuess = async () => {
+        if (phase !== 'awaitingUserGuess') return;
+        const trimmed = userInput.trim().toLowerCase();
+        if (!trimmed) return;
+
+        const [isValid, errorType] = await checkIfValidWord(
+            trimmed,
+            roundResults,
+            dictionarySet,
+            prevUserWord,
+            prevAiWord,
+        );
+
+        if (!isValid) {
+            setInputError(errorType === 'used' || errorType === 'suffix'
+                ? 'Word was used previously.'
+                : 'Word was not found in the dictionary.');
+            return;
+        }
+
+        setInputError(null);
+        setUserInput('');
+        setGameState('resetting');
+        await waitForAi();
+
+        try {
+            isGeneratingRef.current = true;
+            const turnMessages = roundResults.length
+                ? roundResults.map(result =>
+                    `<span class='prev-words prev-words-user'>${result.userGuess}</span><span class='prev-words prev-words-ai'>${result.aiGuess}</span>`,
+                )
+                : ['First round.'];
+
+            if (await checkForMatch(trimmed, currentAiGuessRef.current)) {
+                setGameState('awaitingRoundWon');
+                await handleRoundWon(trimmed, turnMessages);
+            } else {
+                await handleRoundContinue(trimmed, turnMessages);
+            }
+        } catch (error) {
+            console.error('Error processing guess:', error);
+            setGameMessages(['Error communicating with AI. Reload the page and try again.']);
+            setGameState('idle');
+            isGeneratingRef.current = false;
         }
     };
 
@@ -199,7 +256,11 @@ export const MindMeld: React.FC = () => {
         }
     };
 
-    // Effects
+    const onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (inputError) setInputError(null);
+        handleInputChange(event);
+    };
+
     useEffect(() => {
         if (!isStarted.current) {
             isStarted.current = true;
@@ -208,54 +269,58 @@ export const MindMeld: React.FC = () => {
     }, [animation]);
 
     useEffect(() => {
-        gameState.gameStateRef.current = gameState.gameState;
-    }, [gameState.gameState, gameState.gameStateRef]);
+        gameStateRef.current = phase;
+    }, [phase, gameStateRef]);
 
     useEffect(() => {
-        if (gameState.gameState === 'roundWon') {
+        if (phase === 'roundWon') {
             setTimeout(() => {
-                animation.animateNewWordBadges(gameState.newWords, gameState.animatedNewWords);
+                animation.animateNewWordBadges(newWords, animatedNewWords);
             }, 1000);
         }
-    }, [gameState.gameState, gameState.newWords, gameState.animatedNewWords, animation]);
+    }, [phase, newWords, animatedNewWords, animation]);
 
-    // Render functions
     const renderGameControls = () => {
-        switch (gameState.gameState) {
+        switch (phase) {
             case 'idle':
                 return gameIdle(handleStartGame);
-
             case 'awaitingUserGuess':
-                return gameAwaitingUserGuess(handleSubmitGuess, handleKeyPress, gameState.round, gameState.prevUserWord, gameState.prevAiWord, gameState.userInput, gameState.handleInputChange);
-
+                return gameAwaitingUserGuess(
+                    handleSubmitGuess,
+                    handleKeyPress,
+                    round,
+                    prevUserWord,
+                    prevAiWord,
+                    userInput,
+                    onInputChange,
+                    inputError,
+                );
             case 'waitingForAI':
-                return gameWaitingForAI(gameState.round, gameState.prevUserWord, gameState.prevAiWord, gameState.userInput);
-
+                return gameWaitingForAI(round, prevUserWord, prevAiWord, userInput);
             case 'resetting':
                 return gameResetting();
-
             case 'roundLost':
-                return gameRoundLost(handleStartGame, gameState.round);
-
+                return gameRoundLost(handleStartGame, round);
             case 'awaitingRoundWon':
                 return gameAwaitingRoundWon();
-
             case 'roundWon':
-                return gameRoundWon(handleStartGame, gameState.round, gameState.newWords);
+                return gameRoundWon(handleStartGame, round, newWords);
+            default:
+                return null;
         }
     };
 
     return (
         <div className="mind-meld-game">
-            <h2>MIndmeld</h2>
+            <h2>MindMeld</h2>
             <div className="game-area">
                 <div className="message-display">
                     <span className='prev-words-container'>
-                        {gameState.gameMessages.length > 0 ? (
-                            gameState.gameMessages.map((msg, index) => (
-                                <div 
-                                    className='prev-words-group' 
-                                    key={index} 
+                        {gameMessages.length > 0 ? (
+                            gameMessages.map((msg, index) => (
+                                <div
+                                    className='prev-words-group'
+                                    key={index}
                                     dangerouslySetInnerHTML={{ __html: msg }}
                                 />
                             ))
@@ -265,9 +330,9 @@ export const MindMeld: React.FC = () => {
                     </span>
                 </div>
 
-                <div 
-                    className='timer' 
-                    hidden={gameState.gameState !== 'awaitingUserGuess' || gameState.round < 2}
+                <div
+                    className='timer'
+                    hidden={phase !== 'awaitingUserGuess' || round < 2}
                 >
                     You have <span id="timerDisplay">
                         <span className='time-vals'>25</span>:<span className='time_secs time-vals'>00</span>
@@ -284,4 +349,4 @@ export const MindMeld: React.FC = () => {
             </div>
         </div>
     );
-}; 
+};

@@ -1,15 +1,12 @@
 const { DataAPIClient } = require('@datastax/astra-db-ts');
 
-// Initialize clients
+// Initialize clients outside handler for connection reuse
 const astraToken = process.env.REACT_APP_ASTRA_DB_TOKEN;
 const astraEndpoint = process.env.REACT_APP_ASTRA_DB_ID;
 
 if (!astraToken || !astraEndpoint) {
 	console.error("Missing required environment variables!");
-	return {
-		statusCode: 500,
-		body: JSON.stringify({ message: 'Server configuration error.' }),
-	};
+	throw new Error('Server configuration error.');
 }
 
 const astraClient = new DataAPIClient(astraToken);
@@ -27,7 +24,6 @@ exports.handler = async (event, context) => {
 	}
 
 	try {
-		// Initialize astraTable
 		const astraTable = await astraDb.table(ASTRA_TABLE_NAME);
 		if (!astraTable) {
 			console.error("Astra table not initialized. Cannot get words.");
@@ -41,8 +37,11 @@ exports.handler = async (event, context) => {
 			};
 		}
 
-		// Simply query all rows without vector search
-		const cursor = await astraTable.find({});
+		// Use projection to fetch only word fields, not vectors (much more efficient)
+		const cursor = astraTable.find({}, {
+			projection: { userWord: 1, aiWord: 1, correctGuess: 1 },
+			limit: 10000
+		});
 
 		const uniqueWords = new Set();
 		let rowCount = 0;
@@ -50,15 +49,19 @@ exports.handler = async (event, context) => {
 		for await (const row of cursor) {
 			rowCount++;
 			
-			// Extract all string values from the row that aren't id, vector, or roundNumber
-			Object.entries(row).forEach(([key, value]) => {
-				if (key !== 'id' && key !== 'vector' && key !== 'roundNumber' && key !== '$similarity' && typeof value === 'string') {
-					uniqueWords.add(value.toLowerCase());
-				}
-			});
+			// Extract word fields
+			if (row.userWord && typeof row.userWord === 'string') {
+				uniqueWords.add(row.userWord.toLowerCase());
+			}
+			if (row.aiWord && typeof row.aiWord === 'string') {
+				uniqueWords.add(row.aiWord.toLowerCase());
+			}
+			if (row.correctGuess && typeof row.correctGuess === 'string') {
+				uniqueWords.add(row.correctGuess.toLowerCase());
+			}
 		}
 		
-		console.log(`Found ${rowCount} rows in database, extracted ${uniqueWords.size} unique words`);
+		console.log(`Scanned ${rowCount} rows, extracted ${uniqueWords.size} unique words`);
 
 		return {
 			statusCode: 200, 

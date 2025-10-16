@@ -46,19 +46,7 @@ $s-10: 80px
     --material-inset: #{$material-inset}
     --text-base: #{$text-base}
 
-html
-    background-color: $color-indigo-3
-
-#root
-    display: flex
-    height: 100vh
-
-fieldset
-    border: none
-    padding: 0px
-    margin: 0px
-
-.center-wrapper
+%center-shell
     display: grid
     color: $text-white
     justify-items: center
@@ -69,23 +57,68 @@ fieldset
     width: 100%
     font-family: $font-block
     gap: $s-0-5
-    &.mind-meld-wrapper
-        margin: 0px
-        padding: 0px
-        width: 100vw
-        height: 100vh
-        max-width: none
-        max-height: none
-        @media (max-width: 800px)
-            align-content: flex-start
 
-.feed-wrapper
+@mixin stack($gap: 0, $align: stretch)
     display: flex
     flex-direction: column
+    gap: $gap
+    align-items: $align
+
+@mixin surface($bg: $color-indigo-3, $radius: $s-1, $padding: $s-1-5)
+    background-color: $bg
+    border-radius: $radius
+    padding: $padding
+
+html
+    background-color: $color-indigo-3
+
+#root
+    display: flex
+    height: 100vh
+
+.flex
+    display: flex
+
+.gap-1
+    gap: $s-1
+.gap-2
+    gap: $s-2
+.gap-3
+    gap: $s-3
+.gap-4
+    gap: $s-4
+
+.flex-col
+    flex-direction: column
+
+fieldset
+    border: none
+    padding: 0px
+    margin: 0px
+
+.center-wrapper
+    @extend %center-shell
+
+.mind-meld-wrapper
+    @extend %center-shell
+    margin: 0
+    padding: 0
+    width: 100vw
+    height: 100vh
+    max-width: none
+    max-height: none
+    @media (max-width: 800px)
+        align-content: flex-start
+
+.wedding-wrapper
+    @extend %center-shell
+    padding: $s-4
+
+.feed-wrapper
+    @include stack($s-1)
     align-items: stretch
     width: 100%
     padding-bottom: $s-6
-    gap: $s-1
 
 .button-wrapper
     display: flex
@@ -144,17 +177,12 @@ fieldset
     color: $text-white
 
 .content-block
-    display: flex
-    flex-direction: column
+    @include stack($s-1, flex-start)
     margin-top: $s-1
-    align-items: flex-start
     font-family: $font-sans
     color: $text-base
     font-weight: 500
-    gap: $s-1
-    padding: $s-2
-    background-color: $material-base
-    border-radius: $s-1
+    @include surface($material-base, $s-1, $s-2)
     .generated-text
         line-height: 150%
         text-align: left
@@ -275,15 +303,9 @@ input
                     color: $color-red-1
 
         .message-display
-            display: flex
-            flex-direction: column
-            align-items: center
-            gap: $s-1
+            @include stack($s-1, center)
             font-size: 1rem
-            padding: $s-2
-            background-color: $color-indigo-3
-            border-radius: $s-1
-            padding: $s-1-5
+            @include surface($padding: $s-2)
             .prev-words-container
                 display: flex
                 flex-direction: row
@@ -332,22 +354,15 @@ input
                                 transform: rotate(10deg) scale(1)
 
         .game-controls
-            display: flex
-            flex-direction: column
-            align-items: center
-            gap: $s-1
+            @include stack($s-1, center)
             p
                 margin: 0px
             .input-group
-                background-color: $color-indigo-3
-                border-radius: $s-1
-                padding: $s-1-5
+                @include surface()
             .prompt
                 font-size: 1rem
+                @include surface()
                 gap: $s-0-5
-                background-color: $color-indigo-3
-                border-radius: $s-1
-                padding: $s-1-5
                 .guess-words
                     display: inline-flex
                     flex-direction: row
@@ -370,10 +385,16 @@ input
 .error-message
     font-size: 0.8rem
     font-weight: 500
-    background-color: $color-red-1
     color: $text-white
-    padding: 2px $s-0-5
-    border-radius: $s-0-5
+    @include surface($color-red-1, $s-0-5, 2px $s-0-5)
+
+.success-message
+    font-size: 1.25rem
+    font-family: $font-sans
+    color: $color-indigo-3
+    @include surface($color-green-1, $s-1, $s-2)
+    p
+        margin: 0px
 
 .wave-container
     display: grid

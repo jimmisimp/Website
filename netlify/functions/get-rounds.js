@@ -1,17 +1,14 @@
 const { DataAPIClient } = require('@datastax/astra-db-ts');
 const { OpenAI } = require('openai');
 
-// Initialize clients
+// Initialize clients outside handler for connection reuse
 const astraToken = process.env.REACT_APP_ASTRA_DB_TOKEN;
 const astraEndpoint = process.env.REACT_APP_ASTRA_DB_ID;
 const openaiApiKey = process.env.REACT_APP_OPENAIKEY;
 
 if (!astraToken || !astraEndpoint || !openaiApiKey) {
   console.error("Missing required environment variables!");
-  return {
-    statusCode: 500,
-    body: JSON.stringify({ message: 'Server configuration error.' }),
-  };
+  throw new Error('Server configuration error.');
 }
 
 const astraClient = new DataAPIClient(astraToken);
@@ -31,12 +28,12 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { word } = event.queryStringParameters || {};
+    const { userWord, aiWord } = event.queryStringParameters || {};
 
-    if (!word) {
+    if (!userWord || !aiWord) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Missing "word" query parameter' })
+        body: JSON.stringify({ message: 'Missing "userWord" and/or "aiWord" query parameters' })
       };
     }
 
@@ -49,40 +46,83 @@ exports.handler = async (event, context) => {
          return { statusCode: 500, body: JSON.stringify({ message: 'Database table not available.' }) };
      }
 
-    // 1. Generate embedding for the input word
+    // Hybrid embedding strategy: query with word pair (primary) and individual words (secondary)
+    const pairQuery = `${userWord} + ${aiWord}`;
+    
     const embeddingResponse = await openai.embeddings.create({
         model: "text-embedding-3-small",
-        input: word,
+        input: [pairQuery, userWord, aiWord],
     });
-    const rawEmbedding = embeddingResponse.data[0].embedding;
+    
+    const pairEmbedding = embeddingResponse.data[0].embedding;
+    const userEmbedding = embeddingResponse.data[1].embedding;
+    const aiEmbedding = embeddingResponse.data[2].embedding;
 
-    // 2. Perform vector search
-    const cursor = await astraTable.find({}, {
-        sort: { vector: rawEmbedding },
+    // Perform vector searches in parallel
+    const [pairResults, userResults, aiResults] = await Promise.all([
+      astraTable.find({}, {
+        sort: { vector: pairEmbedding },
         includeSimilarity: true,
         limit: 5
+      }).toArray(),
+      astraTable.find({}, {
+        sort: { vector: userEmbedding },
+        includeSimilarity: true,
+        limit: 3
+      }).toArray(),
+      astraTable.find({}, {
+        sort: { vector: aiEmbedding },
+        includeSimilarity: true,
+        limit: 3
+      }).toArray()
+    ]);
+
+    // Combine results with weighted scoring (pair matches weighted higher)
+    const scoredGuesses = new Map();
+    const currentWords = [userWord.toLowerCase(), aiWord.toLowerCase()];
+
+    // Process pair matches (weight: 1.0)
+    pairResults.forEach(row => {
+      const guess = row.correctGuess?.toLowerCase();
+      if (!guess) return;
+      
+      const isExcluded = currentWords.some(w => 
+        guess === w || guess === w + 's' || guess === w + 'es' || 
+        guess === w + 'ed' || guess === w + 'ing' || guess === w + 'ly' || guess === w + 'r'
+      );
+      
+      if (!isExcluded) {
+        const score = (row['$similarity'] || 0) * 1.0;
+        scoredGuesses.set(guess, Math.max(scoredGuesses.get(guess) || 0, score));
+      }
     });
 
-    // 3. Extract correctGuess from results
-    const topGuesses = [];
-    const similarity = [];
-    const currentWords = word.split('+').map(w => w.trim());
+    // Process individual word matches (weight: 0.5)
+    [...userResults, ...aiResults].forEach(row => {
+      const guess = row.correctGuess?.toLowerCase();
+      if (!guess) return;
+      
+      const isExcluded = currentWords.some(w => 
+        guess === w || guess === w + 's' || guess === w + 'es' || 
+        guess === w + 'ed' || guess === w + 'ing' || guess === w + 'ly' || guess === w + 'r'
+      );
+      
+      if (!isExcluded) {
+        const score = (row['$similarity'] || 0) * 0.5;
+        scoredGuesses.set(guess, Math.max(scoredGuesses.get(guess) || 0, score));
+      }
+    });
 
-    for await (const row of cursor) {
-        console.log(`Found match (Similarity: ${row['$similarity']?.toFixed(4)}):`, row.correctGuess);
-        const guess = row.correctGuess;
-        // Check if the guess matches any word in currentWords or its simple plural/variant forms
-        const isExcluded = currentWords.some(w => guess === w || guess === w + 's' || guess === w + 'es' || guess === w + 'ed' || guess === w + 'ing' || guess === w + 'ly' || guess === w + 'r');
-        console.log(`Filtering ${guess}: ${isExcluded}`);
+    // Sort by score and return top results
+    const sortedGuesses = Array.from(scoredGuesses.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
 
-        if (!isExcluded) {
-            topGuesses.push(guess);
-            similarity.push(row['$similarity']);
-        }
-    }
-    console.log("Top guesses found:", topGuesses);
+    const topGuesses = sortedGuesses.map(([guess]) => guess);
+    const similarity = sortedGuesses.map(([_, score]) => score);
 
-    // 4. Return results
+    console.log(`Vector search for "${userWord} + ${aiWord}": Found ${topGuesses.length} suggestions`);
+
     return {
       statusCode: 200,
       body: JSON.stringify({ topGuesses, similarity }),

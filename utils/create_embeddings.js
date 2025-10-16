@@ -87,29 +87,44 @@ async function processCsvAndUpload() {
 				const rowsToInsert = [];
 				let uniqueIdCounter = 0;
 
-				console.log("Generating embeddings and preparing data for Astra DB...");
+				// Validate and prepare rows first
+				const validRows = [];
 				for (const row of results) {
 					if (!row.userWord || !row.aiWord || !row.correctGuess || row.roundNumber === undefined || row.roundNumber === null) {
 						console.warn(`Skipping row due to missing data: ${JSON.stringify(row)}`);
 						continue;
 					}
+					validRows.push(row);
+				}
 
-					const embeddingInput = `${row.userWord} + ${row.aiWord} = ${row.correctGuess}`;
+				if (validRows.length === 0) {
+					console.log("No valid rows to process.");
+					return;
+				}
 
-					try {
-						console.log(`Generating embedding for ID ${uniqueIdCounter}...`);
-						const embeddingResponse = await openai.embeddings.create({
-							model: "text-embedding-3-small",
-							input: embeddingInput,
-						});
+				console.log(`Generating batch embeddings for ${validRows.length} rows...`);
+				
+				// Batch generate embeddings
+				const embeddingInputs = validRows.map(row => 
+					`${row.userWord} + ${row.aiWord} = ${row.correctGuess}`
+				);
 
-						if (!embeddingResponse.data || !embeddingResponse.data[0] || !embeddingResponse.data[0].embedding) {
-							console.error(`Failed to get embedding structure for row: ${JSON.stringify(row)}`, embeddingResponse);
-							continue;
-						}
+				try {
+					console.time('Batch embedding generation');
+					const embeddingResponse = await openai.embeddings.create({
+						model: "text-embedding-3-small",
+						input: embeddingInputs,
+					});
+					console.timeEnd('Batch embedding generation');
 
-						const embeddingVector = vector(embeddingResponse.data[0].embedding);
+					if (!embeddingResponse.data || embeddingResponse.data.length !== validRows.length) {
+						console.error('Failed to get valid batch embedding structure');
+						return;
+					}
 
+					// Map embeddings to rows
+					validRows.forEach((row, idx) => {
+						const embeddingVector = vector(embeddingResponse.data[idx].embedding);
 						rowsToInsert.push({
 							id: uniqueIdCounter++,
 							roundNumber: parseInt(row.roundNumber, 10),
@@ -118,11 +133,11 @@ async function processCsvAndUpload() {
 							correctGuess: row.correctGuess,
 							vector: embeddingVector,
 						});
+					});
 
-					} catch (embeddingError) {
-						console.error(`Failed to generate embedding for row ID ${uniqueIdCounter} (${JSON.stringify(row)}):`, embeddingError);
-						continue;
-					}
+				} catch (embeddingError) {
+					console.error('Failed to generate batch embeddings:', embeddingError);
+					return;
 				}
 
 				// --- Database Insertion ---

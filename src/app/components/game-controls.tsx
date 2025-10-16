@@ -8,7 +8,16 @@ export const gameIdle = (handleStartGame: () => void) => (
 	</div >
 )
 
-export const gameAwaitingUserGuess = (handleSubmitGuess: () => void, handleKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void, round: number, prevUserWord: string, prevAiWord: string, userInput: string, handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void) => (
+export const gameAwaitingUserGuess = (
+	handleSubmitGuess: () => void,
+	handleKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void,
+	round: number,
+	prevUserWord: string,
+	prevAiWord: string,
+	userInput: string,
+	handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+	inputError?: string | null
+) => (
 	<div className="game-controls">
 		{round > 1 && prevUserWord && prevAiWord && (
 			<p className="prompt">
@@ -18,7 +27,6 @@ export const gameAwaitingUserGuess = (handleSubmitGuess: () => void, handleKeyPr
 		<div className='input-group'>
 			<input
 				autoComplete='off'
-				id="user-input"
 				type="text"
 				maxLength={32}
 				value={userInput}
@@ -26,6 +34,9 @@ export const gameAwaitingUserGuess = (handleSubmitGuess: () => void, handleKeyPr
 				onKeyDown={handleKeyPress}
 				placeholder={round === 1 ? "Enter a word" : "Enter your guess"}
 				autoFocus
+				className={inputError ? 'error' : undefined}
+				aria-invalid={Boolean(inputError)}
+				aria-describedby={inputError ? 'input-error' : undefined}
 			/>
 			
 			<button
@@ -36,9 +47,11 @@ export const gameAwaitingUserGuess = (handleSubmitGuess: () => void, handleKeyPr
 				Guess
 			</button>
 		</div>
-		<span hidden id='input-error' className='error-message'>
-			Error message.
-		</span>
+		{inputError && (
+			<span id='input-error' className='error-message'>
+				{inputError}
+			</span>
+		)}
 	</div>
 )
 

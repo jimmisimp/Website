@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChatAvatar } from '@/lib/components';
 import { PaletteFeedItem } from '@/lib/types';
 import { useColorUtils } from '@/lib/hooks';
@@ -7,7 +6,7 @@ export const PaletteItem = ({ props }: { props: PaletteFeedItem }) => {
     const { getTextColor } = useColorUtils();
 
     return (
-        <React.Fragment key={props.id}>
+        <>
             <ChatAvatar />
             <div className='content-block'>
                 <div className='generated-text'>I call this "{props.data.name}"</div>
@@ -20,6 +19,6 @@ export const PaletteItem = ({ props }: { props: PaletteFeedItem }) => {
                 </div>
                 <div className='generated-text'>{props.data.caption}</div>
             </div>
-        </React.Fragment>
-    )
-}
+        </>
+    );
+};

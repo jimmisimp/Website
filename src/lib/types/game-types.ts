@@ -6,6 +6,11 @@ export interface RoundResult {
     aiGuess: string;
 }
 
+export interface VectorSearchResult {
+    topGuesses: string[];
+    similarity: number[];
+}
+
 export interface GameConfig {
     ROUND_LENGTH: number;
     API_BASE_URL: string;

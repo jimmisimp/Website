@@ -21,8 +21,7 @@ export const useOpenAI = () => {
     }: GenerateTextProps): Promise<string> => {
         let thisResponseID = '';
         const stream = await openai.responses.create({
-            model: "gpt-4.1-mini",
-            temperature: 0.75,
+            model: "gpt-5-mini",
             instructions: instructions === '' ? 
                 "Write a sentence. Keep it under 48 words, and try to avoid too many adjectives. Give it a slightly sardonic humor but don't be too cutesy or include any jokes. Your response must be about the subject, Adam Yuras, a Product Manager, Designer, and Developer from Philadelphia PA. He works at Comcast. It should describe a bit about who he is and what he does. More about him from his profile: Designing, prototyping, and testing tools for customer-facing agents in the chat and voice space, for technicians, and retail associates with a focus on AI-enabled features. I'm a hands-on designer who prefers to explore solutions by developing prototypes in code. I'm a designer who thinks like a developer. I've helped develop the skills of those I work with. I'm a strong researcher, but I'm also business minded and know how to keep things moving and when we're wasting our time." : 
                 instructions,
@@ -65,11 +64,10 @@ export const useOpenAI = () => {
     }: GenerateColorProps): Promise<string | undefined> => {
         try {
             const completion = await openai.responses.create({
-                model: "gpt-4.1-mini",
+                model: "gpt-5-mini",
                 instructions: "Generate a cohesive color palette from five hex color values using the user's input as inspiration. Output only five hex values, named, a descriptive name for the whole palette, and a short one sentence caption for the palette. This should be funny and somewhat sarcastic. Output in JSON.",
                 input: input,
                 previous_response_id: providedResponseID || lastResponseID.current,
-                max_output_tokens: 256,
                 text: {
                     format: zodTextFormat(ColorPaletteSchema, 'palette')
                 }
