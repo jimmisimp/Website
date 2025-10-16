@@ -1,5 +1,5 @@
 import '@/lib/assets/stylesheet.sass';
-import { TextGenerator, MindMeld } from '@/app'
+import { TextGenerator, MindMeld, Wedding } from '@/app'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 export const Main = () => {
@@ -21,6 +21,10 @@ export const Main = () => {
         <Route path="/mindmeld" element={
           <div className="mind-meld-wrapper center-wrapper">
             <MindMeld />
+          </div>} />
+        <Route path="/wedding" element={
+          <div className="wedding-wrapper center-wrapper">
+            <Wedding />
           </div>} />
       </Routes>
     </Router >
