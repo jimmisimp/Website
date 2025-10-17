@@ -12,6 +12,7 @@ if (!astraToken || !astraEndpoint) {
 const astraClient = new DataAPIClient(astraToken);
 const astraDb = astraClient.db(astraEndpoint);
 const ASTRA_TABLE_NAME = 'round_data';
+const OPENAI_EMBEDDING_DIMENSION = 1536;
 
 exports.handler = async (event, context) => {
 	// Only allow GET requests
@@ -24,9 +25,31 @@ exports.handler = async (event, context) => {
 	}
 
 	try {
-		const astraTable = await astraDb.table(ASTRA_TABLE_NAME);
+		// Create/get table - ifNotExists will handle if it already exists
+		const astraTable = await astraDb.createTable(ASTRA_TABLE_NAME, {
+			definition: {
+				columns: {
+					id: 'int',
+					roundNumber: 'int',
+					userWord: 'text',
+					aiWord: 'text',
+					correctGuess: 'text',
+					vector: { type: 'vector', dimension: OPENAI_EMBEDDING_DIMENSION },
+				},
+				primaryKey: 'id',
+			},
+			ifNotExists: true,
+		});
+		
+		// Create vector index if it doesn't exist
+		const indexName = `${ASTRA_TABLE_NAME}_vector_idx`;
+		await astraTable.createVectorIndex(indexName, 'vector', {
+			options: { metric: 'cosine' },
+			ifNotExists: true,
+		});
+		
 		if (!astraTable) {
-			console.error("Astra table not initialized. Cannot get words.");
+			console.error("Failed to initialize Astra table");
 			return {
 				statusCode: 500,
 				body: JSON.stringify({ message: 'Database not ready' }),
