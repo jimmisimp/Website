@@ -13,6 +13,9 @@ const MindMeld = lazy(() =>
 const Wedding = lazy(() =>
   import('@/app/pages/wedding').then(mod => ({ default: mod.Wedding }))
 );
+const Resume = lazy(() =>
+  import('@/app/pages/resume').then(mod => ({ default: mod.Resume }))
+);
 
 const PageShell = ({
   wrapper,
@@ -54,6 +57,14 @@ export const Main = () => (
           element={
             <PageShell wrapper="wedding-wrapper">
               <Wedding />
+            </PageShell>
+          }
+        />
+        <Route
+          path="/resume"
+          element={
+            <PageShell wrapper="resume-wrapper">
+              <Resume />
             </PageShell>
           }
         />

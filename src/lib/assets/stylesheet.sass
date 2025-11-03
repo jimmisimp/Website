@@ -114,6 +114,16 @@ fieldset
     @extend %center-shell
     padding: $s-4
 
+.resume-wrapper
+    @extend %center-shell
+    max-width: 800px
+    width: 100%
+    padding: $s-4
+    gap: $s-4
+    font-family: $font-sans
+    color: $text-base
+    font-weight: 500
+
 .feed-wrapper
     @include stack($s-1)
     align-items: stretch
@@ -160,6 +170,19 @@ fieldset
         color: $text-hover
         opacity: 0.5
         cursor: default
+    &.small
+        font-size: 1rem
+        font-family: $font-sans
+        font-weight: 700
+        letter-spacing: unset
+        padding: $s-0-5 $s-1
+
+a.main-button
+    text-decoration: none
+    display: inline-flex
+    align-items: center
+    justify-content: center
+
     .pulse
         position: absolute
         top: 0
@@ -198,20 +221,137 @@ fieldset
 input
     font-family: $font-sans
     flex-grow: 1
-    font-size: 1rem
-    padding: $s-1
-    border: none
-    border-radius: $s-0-5
-    outline: 2px solid $color-indigo-0
-    &:disabled
-        color: $text-white
-        outline: none
-        background-color: $color-indigo-0
-    &:focus-visible
-        outline: 2px solid $color-indigo-1
-    &.error
-        outline: 2px solid $color-red-1
-        color: $color-red-1
+
+.resume
+    @include stack($s-4, stretch)
+    width: 100%
+
+.resume__header
+    @include stack($s-2, stretch)
+    text-align: left
+    color: $text-white
+
+.resume__name
+    text-transform: lowercase
+    font-family: $font-block
+    font-size: 4rem
+
+.resume__title
+    font-size: 1.5rem
+    font-weight: 700
+    margin: 0
+
+.resume__lead
+    font-size: 1.1rem
+    line-height: 1.6
+    margin-bottom: $s-1
+    max-width: 520px
+
+.resume__actions
+    display: flex
+    flex-wrap: wrap
+    gap: $s-1
+    margin-bottom: $s-2
+
+.resume__skills
+    @include surface($material-base, $s-1, $s-2)
+    font-family: $font-sans
+    color: $text-base
+    h2
+        margin: 0 0 $s-1 0
+        font-size: 1rem
+        font-family: $font-sans
+        text-transform: uppercase
+        letter-spacing: 1px
+    ul
+        margin: 0
+        padding-left: $s-3
+        display: grid
+        gap: $s-0-5
+
+.resume__experience
+    @include stack($s-2, stretch)
+    text-align: left
+    h2
+        margin: 0
+        color: $color-indigo-0
+        text-transform: uppercase
+        font-size: 1rem
+        letter-spacing: 1px
+
+.resume__experience-list
+    @include stack($s-2, stretch)
+
+.resume__experience-item
+    @include surface($material-base, $s-1, $s-4)
+    @include stack($s-1, stretch)
+    h3
+        margin: 0
+        font-size: 1.2rem
+        font-weight: 700
+    h4
+        margin: 0
+        font-size: 1rem
+        font-weight: 700
+    ul
+        margin: 0
+        padding-left: $s-3
+        display: grid
+        gap: $s-0-5
+        max-width: 80%
+    li
+        line-height: 1.5
+
+.resume__experience-meta
+    display: flex
+    flex-wrap: wrap
+    gap: $s-0-5
+    font-size: 0.9rem
+    font-weight: 500
+    color: $text-down
+    span:not(:last-child)::after
+        content: '•'
+        margin-left: $s-0-5
+        margin-right: $s-0-5
+
+.resume__experience-skills
+    font-size: 0.9rem
+    color: $text-down
+    margin: 0
+
+@media (max-width: 640px)
+    .resume-wrapper
+        padding: $s-2
+    .resume__actions
+        flex-direction: column
+        align-items: stretch
+
+@media print
+    body
+        background-color: #ffffff
+        color: #000000
+    .resume__header
+        padding: 0
+        gap: 0
+        color: #000000
+        font-size: 1.5rem
+    .resume__name
+        font-size: 2rem
+        color: #000000
+    .resume__title
+        margin: 0
+        font-size: 1.2rem
+    .resume__experience
+        h2
+            text-transform: none
+            color: #000000
+    .resume__experience-item
+        padding: 0
+    .resume-wrapper
+        max-width: none
+        padding: $s-1
+    .resume__actions
+        display: none
 
 .color-results
     display: flex
