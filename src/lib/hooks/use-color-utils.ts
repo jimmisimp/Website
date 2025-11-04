@@ -35,11 +35,53 @@ export const useColorUtils = () => {
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }, []);
 
+    const getContrastRatio = useCallback((hex1: string, hex2: string): number => {
+        const lum1 = getLuminance(hex1);
+        const lum2 = getLuminance(hex2);
+        const lighter = Math.max(lum1, lum2);
+        const darker = Math.min(lum1, lum2);
+        return (lighter + 0.05) / (darker + 0.05);
+    }, [getLuminance]);
+
+    const darkenColor = useCallback((hex: string, amount: number = 0.2): string => {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return hex;
+        
+        const r = Math.max(0, Math.floor(rgb.r * (1 - amount)));
+        const g = Math.max(0, Math.floor(rgb.g * (1 - amount)));
+        const b = Math.max(0, Math.floor(rgb.b * (1 - amount)));
+        
+        return rgbToHex(r, g, b);
+    }, [hexToRgb, rgbToHex]);
+
+    const getDarkestColor = useCallback((colors: string[]): string => {
+        return colors.reduce((darkest, color) => {
+            return getLuminance(color) < getLuminance(darkest) ? color : darkest;
+        });
+    }, [getLuminance]);
+
+    const getAccessibleDarkColor = useCallback((hex: string, targetColor: string = '#ffffff'): string => {
+        let darkColor = hex;
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (getContrastRatio(darkColor, targetColor) < 4.5 && attempts < maxAttempts) {
+            darkColor = darkenColor(darkColor, 0.15);
+            attempts++;
+        }
+        
+        return darkColor;
+    }, [getContrastRatio, darkenColor]);
+
     return {
         getLuminance,
         getTextColor,
         isValidHexColor,
         hexToRgb,
-        rgbToHex
+        rgbToHex,
+        getContrastRatio,
+        darkenColor,
+        getDarkestColor,
+        getAccessibleDarkColor
     };
 }; 

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useFeedItems, useColorUtils, useOpenAI } from '@/lib/hooks';
 import type { ColorPalette, FeedItem } from '@/lib/types';
@@ -9,10 +9,10 @@ const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms
 const animateText = async (
     text: string,
     setText: (value: string) => void,
-    delay = 48
+    delay = 32
 ) => {
     if (!text) return;
-    for (let i = 1; i <= text.length; i += 1) {
+    for (let i = 4; i <= text.length; i += 4) {
         setText(text.slice(0, i));
         await wait(delay);
     }
@@ -20,11 +20,21 @@ const animateText = async (
 };
 
 export const TextGenerator = () => {
-    const { getTextColor } = useColorUtils();
+    const { getTextColor, getDarkestColor, getAccessibleDarkColor } = useColorUtils();
     const { feedItems, addFeedItem, updateFeedItem, removeFeedItem, generateId } = useFeedItems();
     const { generateColorPalette, generateText } = useOpenAI();
     const scrollRef = useRef<HTMLDivElement>(null);
-    const lastResponseID = useRef<string | null>(null);
+
+    useEffect(() => {
+        document.documentElement.classList.add('transitions-enabled');
+    }, []);
+
+    const setBackgroundColor = (palette: ColorPalette) => {
+        const hexColors = palette.colors.map(c => c.hex);
+        const darkest = getDarkestColor(hexColors);
+        const accessibleDark = getAccessibleDarkColor(darkest);
+        document.documentElement.style.backgroundColor = accessibleDark;
+    };
 
     const renderFeedItem = (item: FeedItem) => {
         switch (item.type) {
@@ -65,6 +75,7 @@ export const TextGenerator = () => {
         if (!inputValue) return;
 
         updateFeedItem(formId, { disabled: true });
+        removeFeedItem(formId);
         form.reset();
 
         const generatingId = generateId();
@@ -77,42 +88,33 @@ export const TextGenerator = () => {
         );
 
         let palettePrimary = '';
-        const responseID = await generateColorPalette({
+        const palette = await generateColorPalette({
             input: inputValue,
             onPalette: (palette: ColorPalette) => {
-                removeFeedItem(generatingId);
-                addFeedItem({ id: generateId(), type: 'palette', data: palette });
+                updateFeedItem(generatingId, { type: 'palette', data: palette });
                 palettePrimary = palette.colors[0].hex;
+                setBackgroundColor(palette);
             },
             scrollRef,
-            lastResponseID: lastResponseID.current || undefined,
         });
-        if (responseID) {
-            lastResponseID.current = responseID;
-        }
 
         const textId = generateId();
-        addFeedItem({ id: textId, type: 'text', content: '' });
+        addFeedItem({ id: textId, type: 'generating', message: 'Judging...' });
 
-        const paletteSentence = await generateText({
-            setText: (text: string) => updateFeedItem(textId, { content: text }),
+        await generateText({
+            setText: (text: string) => updateFeedItem(textId, { type: 'text', content: text, isLoading: true }),
             scrollRef,
             onDone: () => updateFeedItem(textId, { isLoading: false }),
-            onAfter: () => {
-                if (responseID) lastResponseID.current = responseID;
-            },
             instructions:
-                "Give a sentence about how nice the palette is. Be witty and sarcastic while bragging about how good the palette is. Don't be too cutesy or inappropriate.",
-            lastResponseID: lastResponseID.current || undefined,
+                "Give a sentence about how nice the palette is. Don't be too cutesy or inappropriate. This response should be funny and somewhat sarcastic. The palette is: " + JSON.stringify(palette),
         });
-        lastResponseID.current = paletteSentence;
 
-        const outroId = generateId();
-        addFeedItem({ id: outroId, type: 'text', content: '' });
+        const signOffId = generateId();
+        addFeedItem({ id: signOffId, type: 'text', content: '' });
 
         await animateText(
-            "How fun... Actually, I made a game too. Try it out. The AI isn't me, and it's not very Adam-centric. But it's fun.",
-            (text: string) => updateFeedItem(outroId, { content: text }),
+            'Thanks for your interest. If you want to connect, check Adam out at LinkedIn. For some more fun, try out my AI-powered guessing game, MindMeld.',
+            (text: string) => updateFeedItem(signOffId, { type: 'text', content: text }),
             32
         );
 
@@ -122,15 +124,6 @@ export const TextGenerator = () => {
             text: 'Play MindMeld',
             onClick: () => window.open('https://adamyuras.com/mindmeld', '_blank'),
         });
-
-        const signOffId = generateId();
-        addFeedItem({ id: signOffId, type: 'text', content: '' });
-
-        await animateText(
-            'Anyway thanks for your interest. If you want to connect, check Adam out at LinkedIn.',
-            (text: string) => updateFeedItem(signOffId, { content: text }),
-            32
-        );
 
         addFeedItem({
             id: generateId(),
@@ -151,13 +144,17 @@ export const TextGenerator = () => {
             28
         );
 
-        const responseId = generateId();
-        addFeedItem({ id: responseId, type: 'text', content: '' });
+        const generatingId = generateId();
+        addFeedItem({ id: generatingId, type: 'generating', message: 'Thinking...' });
 
-        const generatedId = await generateText({
-            setText: (text: string) => updateFeedItem(responseId, { content: text }),
+        await generateText({
+            setText: (text: string) => {
+                updateFeedItem(generatingId, { type: 'text', content: text, isLoading: true });
+            },
             scrollRef,
-            onDone: () => updateFeedItem(responseId, { isLoading: false }),
+            onDone: () => {
+                updateFeedItem(generatingId, { isLoading: false });
+            },
             onAfter: () => {
                 const formId = generateId();
                 addFeedItem({
@@ -175,12 +172,11 @@ export const TextGenerator = () => {
         addFeedItem({ id: promptId, type: 'text', content: '' });
 
         await animateText(
-            "Let's have some fun. Think of something, anything, and I'll make a color palette from it.",
+            "As a gift for checking out the site, I'm going to make a color palette just for you. Give me a subject to work with.",
             (text: string) => updateFeedItem(promptId, { content: text }),
             28
         );
 
-        lastResponseID.current = generatedId;
     };
 
     return (

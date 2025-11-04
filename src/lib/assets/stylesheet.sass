@@ -71,6 +71,8 @@ $s-10: 80px
 
 html
     background-color: $color-indigo-3
+    &.transitions-enabled
+        transition: background-color 2s ease
 
 #root
     display: flex
@@ -211,6 +213,15 @@ a.main-button
         text-align: left
         font-size: 1rem
         font-family: $font-sans
+    .loading-text
+        animation: loading 2s infinite ease-in-out
+        @keyframes loading
+            0%
+                opacity: 1
+            50%
+                opacity: 0.5
+            100%
+                opacity: 1
 
 .input-group
     display: flex

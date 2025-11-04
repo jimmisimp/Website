@@ -100,14 +100,16 @@ export const generateAiGuess = async (
 
     instructions += `\n\n# *STRICT RULE: Your response must be only a single word. Do not use any previous round's words.*`;
 
-    const guess = await openai.responses.create({
+    const guess = await openai.chat.completions.create({
         model: "gpt-5-mini",
-        reasoning: {effort: "low"},
-        instructions: instructions,
-        input: [{ role: "assistant", content: roundInput }],
+        messages: [
+            { role: "user", content: instructions },
+            { role: "user", content: roundInput }
+        ],
+        reasoning_effort: "low"
     });
 
-    const aiGuess = guess.output_text || 'ERROR: No guess returned';
+    const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned';
     console.timeEnd('Time to generate guess');
 
     return aiGuess;
@@ -117,14 +119,17 @@ export const checkForMatch = async (userGuess: string, aiGuess: string): Promise
     const prompt = `Word 1: ${userGuess}\nWord 2: ${aiGuess}`;
     console.time('Time to check for match');
 
-    const guess = await openai.responses.create({
+    const guess = await openai.chat.completions.create({
         model: "gpt-5-nano",
-        instructions: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`.",
-        input: prompt,
+        messages: [
+            { role: "user", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." },
+            { role: "user", content: prompt }
+        ],
+        reasoning_effort: "low"
     });
 
     console.timeEnd('Time to check for match');
-    return guess.output_text === 'true';
+    return guess.choices[0].message.content?.toLowerCase() === 'true';
 };
 
 export const recordRoundToDatabase = async (roundResults: RoundResult[], finalCorrectGuess: string) => {
