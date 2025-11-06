@@ -42,6 +42,7 @@ export interface LinkFeedItem extends FeedItemBase {
     text: string;
     url: string;
     palette: string;
+    label: string;
 }
 
 export type FeedItem = TextFeedItem | ButtonFeedItem | FormFeedItem | GeneratingFeedItem | PaletteFeedItem | LinkFeedItem;

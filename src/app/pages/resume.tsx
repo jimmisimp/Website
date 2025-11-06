@@ -9,7 +9,7 @@ type Experience = {
     skills?: string;
 };
 
-const experiences: Experience[] = [
+export const experiences: Experience[] = [
     {
         company: 'Comcast',
         role: 'Product Engineer and Designer, AI',
@@ -57,7 +57,7 @@ const experiences: Experience[] = [
     },
 ];
 
-const topSkills = [
+export const topSkills = [
     'I take pride in my work, whether it\'s design or code. When there\'s nothing assigned, I will make enhancements to the repo. I strive to be the most impactful member of the team, and I\'ve been told as much by my peers.',
 ];
 
