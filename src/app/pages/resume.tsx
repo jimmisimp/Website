@@ -17,7 +17,7 @@ const experiences: Experience[] = [
         location: 'Philadelphia, Pennsylvania',
         bullets: [
             'Lead exploration, evaluation, and adoption of emerging AI tools and platforms, serving as the go-to resource for identifying and validating AI-driven solutions.',
-            'Develop rapid proofs-of-concept in Python, TypeScript, JavaScript, and YAML, including AI agents built with Mastra and Google Agent Development Kit (ADK).',
+            'Develop AI agents, evaluations, and testing frameworks in Python, TypeScript, and YAML, with agents built using Mastra and Google Agent Development Kit (ADK) frameworks.',
             'Design interactive prototypes to illustrate both the potential and limitations of AI integration within Comcast’s customer service ecosystem.',
         ],
     },
@@ -29,6 +29,7 @@ const experiences: Experience[] = [
         bullets: [
             'Designed, prototyped, and tested tools for customer-facing agents, field technicians, and support associates.',
             'Integrated AI-enabled features that improved operational efficiency and customer outcomes across service teams.',
+            'Created proofs-of-concept well before AI was a buzzword, and helped shape the direction of the product team.',
             'Partnered with cross-functional leaders to validate solutions and prioritize enhancements for internal platform experiences.',
         ],
     },
@@ -39,7 +40,7 @@ const experiences: Experience[] = [
         location: 'Philadelphia, Pennsylvania',
         bullets: [
             'Spearheaded AI chat and voice application design for Comcast, elevating customer service operations and agent tooling.',
-            'Led the creation of a machine learning-based voice product that unified agent workflows and surfaced intelligent recommendations.',
+            'Led the creation of a NLP-based voice product that unified agent workflows and surfaced intelligent recommendations.',
             'Transitioned the product team from Sketch to Figma, revamped the agent chat platform with ADA-focused improvements, and guided research to inform roadmap decisions.',
         ],
     },
@@ -57,7 +58,7 @@ const experiences: Experience[] = [
 ];
 
 const topSkills = [
-    'I\'m a designer who thinks like a developer, and a developer who builds products like a designer. I\'m a highly motivated learner and doer, who can keep things moving and focused on achieving business goals. I strive to be the most impactful member of the team.',
+    'I take pride in my work, whether it\'s design or code. When there\'s nothing assigned, I will make enhancements to the repo. I strive to be the most impactful member of the team, and I\'ve been told as much by my peers.',
 ];
 
 export const Resume: React.FC = () => {
@@ -87,7 +88,7 @@ export const Resume: React.FC = () => {
                 </div>
             </header>
             <section className="resume__experience">
-                <h2>What you need to know</h2>
+                <h2>Who I am</h2>
                 <div className="resume__experience-list">
                     <article className="resume__experience-item">
                         <span>{topSkills}</span>
