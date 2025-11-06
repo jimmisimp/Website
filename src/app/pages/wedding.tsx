@@ -1,57 +1,254 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useOpenAI } from '@/lib/hooks';
+import type { RSVPData } from '@/lib/types';
+
+const CELEBRATION_COLORS = ['#9e7e27', '#46285a'];
 
 export const Wedding: React.FC = () => {
-	const [name, setName] = useState('');
-	const [email, setEmail] = useState('');
-	const [guests, setGuests] = useState(1);
-	const [submitted, setSubmitted] = useState(false);
+	const [inputText, setInputText] = useState('');
+	const [originalText, setOriginalText] = useState('');
+	const [stage, setStage] = useState<'input' | 'parsing' | 'review' | 'generating' | 'complete'>('input');
+	const [parsedData, setParsedData] = useState<RSVPData | null>(null);
+	const [message, setMessage] = useState('');
+	const [isEditing, setIsEditing] = useState(false);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		const rsvpData = { name, email, guests };
-		console.log('RSVP Submission:', rsvpData);
-		setSubmitted(true);
-		setTimeout(() => {
-			setName('');
-			setEmail('');
-			setGuests(1);
-			setSubmitted(false);
-		}, 2000);
+	const { generateText, parseRSVP } = useOpenAI();
+
+	useEffect(() => {
+		if (stage !== 'input') {
+			const randomColor = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
+			document.documentElement.style.transition = 'background-color 1.5s ease-in-out';
+			document.documentElement.style.backgroundColor = randomColor;
+		}
+		return () => {
+			if (stage === 'input') {
+				document.documentElement.style.backgroundColor = '';
+			}
+		};
+	}, [stage]);
+
+	const encode = (data: Record<string, string | number>) => {
+		return Object.keys(data)
+			.map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+			.join("&");
 	};
 
-    return (
-        <div>
-            <h1 className="name">Wedding RSVP</h1>
-			{submitted ? (
-				<div className="success-message">
-					<p>Thank you for your RSVP, {name}!</p>
+	const handleTextSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!inputText.trim()) return;
+
+		const isUpdate = !!originalText;
+		if (!originalText) {
+			setOriginalText(inputText);
+		}
+
+		setStage('parsing');
+		setIsEditing(false);
+
+		try {
+			const parseInput = isUpdate 
+				? `The user asked to update their information. Original submission: "${originalText}". Updated submission: "${inputText}"`
+				: inputText;
+
+			await parseRSVP({
+				input: parseInput,
+				onParsed: (data) => {
+					setParsedData(data);
+					setStage('review');
+				}
+			});
+		} catch (error) {
+			console.error('Error parsing RSVP:', error);
+			setStage(isUpdate ? 'review' : 'input');
+		}
+	};
+
+	const handleConfirm = async () => {
+		if (!parsedData) return;
+
+		setStage('generating');
+
+		try {
+			await fetch("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/x-www-form-urlencoded" },
+				body: encode({ 
+					"form-name": "wedding-rsvp",
+					originalText: originalText,
+					names: parsedData.names.join(', '),
+					contact: parsedData.contact,
+					contactType: parsedData.contactType,
+					guests: parsedData.guestCount,
+					details: parsedData.details || ''
+				})
+			});
+
+			await generateText({
+				setText: setMessage,
+				scrollRef: undefined,
+				onDone: () => setStage('complete'),
+				instructions: `Write a message thanking ${parsedData.names.join(' and ')} for RSVPing to Shannon and Adam's wedding on October 24th. They registered ${parsedData.guestCount} guest${parsedData.guestCount > 1 ? 's' : ''}. Keep it under 100 words. Try to make it a bit funny and sarcastic somehow. Refer to the registrants by their first names only. No emojis. (The original submission from the user was: "${originalText}")`
+			});
+		} catch (error) {
+			console.error('Error submitting RSVP:', error);
+			setStage('review');
+		}
+	};
+
+	const handleEdit = () => {
+		setIsEditing(true);
+		setInputText('');
+	};
+
+	const handleReset = () => {
+		setInputText('');
+		setOriginalText('');
+		setStage('input');
+		setMessage('');
+		setParsedData(null);
+		setIsEditing(false);
+		document.documentElement.style.backgroundColor = '';
+	};
+
+	return (
+		<div className="wedding-wrapper">
+			<div className="wedding-header">
+				<div className="names">Shannon & Adam</div>
+				<div className="event-details">
+					<span className="date">October 24th, 2025</span>
+					<span className="separator">•</span>
+					<span className="time">6:00 PM</span>
 				</div>
-			) : (
-				<form onSubmit={handleSubmit} className="flex flex-col gap-2">
-					<input 
-						type="text" 
-						placeholder="Enter your name" 
-						value={name}
-						onChange={(e) => setName(e.target.value)}
+				<a href="https://maps.app.goo.gl/JjX49Gxdoi2Gs2w48" target="_blank" rel="noopener noreferrer" className="venue">
+					The Society of Colonial Dames
+				</a>
+			</div>
+
+			{stage === 'input' && (
+				<form onSubmit={handleTextSubmit} className="text-input-form fade-in form-container">
+					<label htmlFor="rsvpText">Let us know who's coming</label>
+					<span className="subtext">Include names, contact, and the number of guests, as well as any other details you'd like to share.</span>
+					<textarea
+						name="rsvpText"
+						placeholder="e.g. Shannon and Adam will be there! Contact me at shannon@email.com. I'll be bringing 2 guests."
+						value={inputText}
+						autoComplete='off'
+						autoFocus
+						onChange={(e) => setInputText(e.target.value)}
+						className="text-input"
+						rows={4}
 						required
 					/>
-					<input 
-						type="email" 
-						placeholder="Enter your email" 
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						required
-					/>
-					<input 
-						type="number" 
-						value={guests}
-						onChange={(e) => setGuests(parseInt(e.target.value))}
-						min={1} 
-						max={4} 
-					/>
-					<button type="submit" className="main-button">Submit</button>
+					<button type="submit" className="form-submit">Continue</button>
 				</form>
 			)}
-        </div>
-    );
+
+			{stage === 'parsing' && (
+				<div className="generating-message fade-in">
+					<div className="spinner" />
+					<p>Please wait while we check your RSVP...</p>
+				</div>
+			)}
+
+			{stage === 'review' && parsedData && (
+				<div className="review-container fade-in">
+					<p className="review-prompt">Does this information look correct?</p>
+					
+					<div className="details-card">
+						<h3>RSVP Details</h3>
+						<ul className="details-list">
+							<li>
+								<span className="label">Attendees</span>
+								<span className="value">{parsedData.names.join(', ')}</span>
+							</li>
+							<li>
+								<span className="label">Contact</span>
+								<span className="value">{parsedData.contact || 'Not provided'}</span>
+							</li>
+							<li>
+								<span className="label">Guest Count</span>
+								<span className="value">{parsedData.guestCount}</span>
+							</li>
+							{parsedData.details && (
+								<li>
+									<span className="label">Special Notes</span>
+									<span className="value">{parsedData.details}</span>
+								</li>
+							)}
+						</ul>
+					</div>
+
+					{!isEditing && (
+						<div className="button-group">
+							<button onClick={handleConfirm} className="confirm-button">
+								Looks Good!
+							</button>
+							<button onClick={handleEdit} className="edit-button">
+								Edit Details
+							</button>
+						</div>
+					)}
+
+					{isEditing && (
+						<form onSubmit={handleTextSubmit} className="edit-form fade-in form-container">
+							<label htmlFor="rsvpTextEdit">Update your RSVP</label>
+							<span className="subtext">Tell us what you'd like to update.</span>
+							<textarea
+								name="rsvpTextEdit"
+								placeholder="e.g. There are 3 total guests, not 2."
+								value={inputText}
+								autoComplete='off'
+								onChange={(e) => setInputText(e.target.value)}
+								className="text-input"
+								rows={4}
+								required
+							/>
+							<button type="submit" className="form-submit">Update</button>
+						</form>
+					)}
+				</div>
+			)}
+
+			{stage === 'generating' && (
+				<div className="generating-message fade-in">
+					<div className="spinner" />
+					<p>Confirming your RSVP...</p>
+				</div>
+			)}
+
+			{stage === 'complete' && parsedData && (
+				<div className="success-container fade-in">
+					<div className="ai-message">{message}</div>
+
+					<div className="details-card slide-up">
+						<h3>Registration Confirmed</h3>
+						<ul className="details-list">
+							<li>
+								<span className="label">Attendees</span>
+								<span className="value">{parsedData.names.join(', ')}</span>
+							</li>
+							<li>
+								<span className="label">Contact</span>
+								<span className="value">{parsedData.contact || 'Not provided'}</span>
+							</li>
+							<li>
+								<span className="label">Guests</span>
+								<span className="value">{parsedData.guestCount}</span>
+							</li>
+							{parsedData.details && (
+								<li>
+									<span className="label">Special Notes</span>
+									<span className="value">{parsedData.details}</span>
+								</li>
+							)}
+						</ul>
+					</div>
+
+					<button onClick={handleReset} className="reset-button fade-in-delay">
+						Submit Another
+					</button>
+				</div>
+			)}
+		</div>
+	);
 };

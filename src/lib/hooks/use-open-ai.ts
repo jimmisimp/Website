@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import { GenerateTextProps, GenerateColorProps, ColorPalette, ColorPaletteSchema } from '@/lib/types';
+import { GenerateTextProps, GenerateColorProps, ParseRSVPProps, ColorPalette, ColorPaletteSchema, RSVPData, RSVPDataSchema } from '@/lib/types';
 import { experiences, topSkills } from '@/app/pages/resume';
 
 const openai = new OpenAI({
@@ -78,9 +78,37 @@ export const useOpenAI = () => {
         }
     }, []);
 
+    const parseRSVP = useCallback(async ({
+        input,
+        onParsed,
+    }: ParseRSVPProps): Promise<RSVPData> => {
+        const schema = zodTextFormat(RSVPDataSchema, 'rsvp')
+        try {
+            const completion = await openai.chat.completions.create({
+                model: "gpt-5-mini",
+                reasoning_effort: "low",
+                messages: [
+                    { role: 'system', content: "Parse the user's RSVP text into structured data. Extract all first names mentioned as attendees, identify the contact method (email or phone), count the total number of guests, and determine if the contact is email or phone. Also extract any important details like dietary restrictions, accessibility needs, allergies, or special requests - only include truly important information that the hosts would need to know. Be flexible with formats and understand natural language. If email is not provided or clearly identifiable, use an empty string. If no important details are mentioned, leave details field empty. RSVP Data Schema: " + JSON.stringify(schema) },
+                    { role: 'user', content: input }
+                ],
+                response_format: { type: "json_schema", json_schema: { name: "rsvp", description: "Parsed RSVP data", schema: schema.schema } },
+            });
+
+            const response = completion.choices[0].message.content || '';
+            const parsedResponse: RSVPData = JSON.parse(response);
+            if (onParsed) onParsed(parsedResponse);
+            return parsedResponse;
+        } catch (error) {
+            console.error('Error parsing RSVP:', error);
+            return { names: [], contact: '', contactType: 'email', guestCount: 0 };
+        }
+    }, []);
+
     return {
         generateText,
         generateColorPalette,
-        ColorPaletteSchema
+        parseRSVP,
+        ColorPaletteSchema,
+        RSVPDataSchema
     };
 }; 

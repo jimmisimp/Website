@@ -33,6 +33,14 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <form name="wedding-rsvp" method="POST" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="originalText" />
+      <input type="text" name="names" />
+      <input type="text" name="contact" />
+      <input type="text" name="contactType" />
+      <input type="number" name="guests" />
+      <input type="text" name="details" />
+    </form>
     <div id="root"></div>
     <!--
       This HTML file is a template.
