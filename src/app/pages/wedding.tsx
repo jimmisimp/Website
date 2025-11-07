@@ -92,12 +92,12 @@ export const Wedding: React.FC = () => {
 				headers: { "Content-Type": "application/x-www-form-urlencoded" },
 				body: encode({
 					"form-name": "wedding-rsvp",
-					originalText: originalText,
 					names: parsedData.names.join(', '),
 					contact: parsedData.contact,
 					contactType: parsedData.contactType,
 					guests: parsedData.guestCount,
-					details: parsedData.details || ''
+					details: parsedData.details || '',
+					originalText: originalText
 				})
 			});
 
