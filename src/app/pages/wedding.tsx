@@ -12,7 +12,7 @@ export const Wedding: React.FC = () => {
 	const [message, setMessage] = useState('');
 	const [isEditing, setIsEditing] = useState(false);
 
-	const { generateText, parseRSVP } = useOpenAI();
+	const { generateText, parseRSVP, moderateText } = useOpenAI();
 
 	useEffect(() => {
 		if (stage !== 'input') {
@@ -36,10 +36,12 @@ export const Wedding: React.FC = () => {
 	const handleTextSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!inputText.trim()) return;
+		const cleanInput = await cleanSafeInput(inputText);
+		if (!cleanInput) return;
 
 		const isUpdate = !!originalText;
 		if (!originalText) {
-			setOriginalText(inputText);
+			setOriginalText(cleanInput);
 		}
 
 		setStage('parsing');
@@ -47,8 +49,8 @@ export const Wedding: React.FC = () => {
 
 		try {
 			const parseInput = isUpdate 
-				? `The user asked to update their information. Original submission: "${originalText}". Updated submission: "${inputText}"`
-				: inputText;
+				? `The user asked to update their information. Original submission: "${originalText}". Updated submission: "${cleanInput}"`
+				: cleanInput;
 
 			await parseRSVP({
 				input: parseInput,
@@ -61,6 +63,13 @@ export const Wedding: React.FC = () => {
 			console.error('Error parsing RSVP:', error);
 			setStage(isUpdate ? 'review' : 'input');
 		}
+	};
+
+	const cleanSafeInput = async (input: string) => {
+		let cleanInput = input.replace(/[^a-zA-Z0-9\s@.,\-]/g, '').replace(/[^\x00-\x7F]/g, '').trim();
+		console.log('Clean input:', cleanInput);
+		cleanInput = await moderateText(cleanInput);
+		return cleanInput;
 	};
 
 	const handleConfirm = async () => {
@@ -137,6 +146,7 @@ export const Wedding: React.FC = () => {
 						onChange={(e) => setInputText(e.target.value)}
 						className="text-input"
 						rows={4}
+						maxLength={1000}
 						required
 					/>
 					<button type="submit" className="form-submit">Continue</button>

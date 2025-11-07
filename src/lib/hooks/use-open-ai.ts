@@ -14,6 +14,18 @@ const styleInstructions = "Style and tone: Don't be too cutesy or inappropriate.
 const profile = `Write a sentence. Keep it under 100 words, and try to avoid too many adjectives. Give it a slightly humorous and casual tone but don't be too cutesy, self-deprecating, or include any jokes at Adam's expense. Your response must be about the subject, Adam Yuras, a Product Manager, Designer, and Developer from Philadelphia PA. He works at Comcast. It should describe a bit about who he is and what he does. More about him from his profile: Designing, prototyping, and testing tools for customer-facing agents in the chat and voice space, for technicians, and retail associates with a focus on AI-enabled features. I'm a hands-on designer who prefers to explore solutions by developing prototypes in code. I'm a designer who thinks like a developer. I've helped develop the skills of those I work with. I'm a strong researcher, but I'm also business minded and know how to keep things moving and when we're wasting our time. ` + topSkills.join('\n') + '\n' + experiences.map(experience => `${experience.company} - ${experience.role} - ${experience.period} - ${experience.location} - ${experience.bullets.join('\n')}`).join('\n')
 
 export const useOpenAI = () => {
+    const moderateText = useCallback(async (input: string): Promise<string> => {
+        const response = await openai.moderations.create({
+            input: input,
+            model: "omni-moderation-latest"
+        });
+        if (response.results[0].flagged) {
+            console.error('Text flagged:', response.results[0].categories);
+            return '';
+        }
+        return input;
+    }, []);
+
     const generateText = useCallback(async ({
         setText,
         scrollRef,
@@ -108,6 +120,7 @@ export const useOpenAI = () => {
         generateText,
         generateColorPalette,
         parseRSVP,
+        moderateText,
         ColorPaletteSchema,
         RSVPDataSchema
     };
