@@ -11,7 +11,7 @@ export const Wedding: React.FC = () => {
 	const [parsedData, setParsedData] = useState<RSVPData | null>(null);
 	const [message, setMessage] = useState('');
 	const [isEditing, setIsEditing] = useState(false);
-
+	const [isRejected, setIsRejected] = useState(false);
 	const { generateText, parseRSVP, moderateText } = useOpenAI();
 
 	useEffect(() => {
@@ -48,13 +48,22 @@ export const Wedding: React.FC = () => {
 		setIsEditing(false);
 
 		try {
-			const parseInput = isUpdate 
+			const parseInput = isUpdate
 				? `The user asked to update their information. Original submission: "${originalText}". Updated submission: "${cleanInput}"`
 				: cleanInput;
 
 			await parseRSVP({
 				input: parseInput,
 				onParsed: (data) => {
+					if (data.names.includes('ERROR')) {
+						setMessage('ERROR: ' + data.details + '\nIf you are having issues, please contact Adam or Shannon.');
+						setParsedData({ names: ['ERROR'], contact: '', contactType: 'email', guestCount: 0});
+						setIsRejected(true);
+						setStage('complete');
+						setInputText('');
+						return;
+					}
+
 					setParsedData(data);
 					setStage('review');
 				}
@@ -66,7 +75,7 @@ export const Wedding: React.FC = () => {
 	};
 
 	const cleanSafeInput = async (input: string) => {
-		let cleanInput = input.replace(/[^a-zA-Z0-9\s@.,\-]/g, '').replace(/[^\x00-\x7F]/g, '').trim();
+		let cleanInput = input.replace(/[^a-zA-Z0-9\s@.,-]/g, '').trim();
 		console.log('Clean input:', cleanInput);
 		cleanInput = await moderateText(cleanInput);
 		return cleanInput;
@@ -81,7 +90,7 @@ export const Wedding: React.FC = () => {
 			await fetch("/", {
 				method: "POST",
 				headers: { "Content-Type": "application/x-www-form-urlencoded" },
-				body: encode({ 
+				body: encode({
 					"form-name": "wedding-rsvp",
 					originalText: originalText,
 					names: parsedData.names.join(', '),
@@ -148,8 +157,9 @@ export const Wedding: React.FC = () => {
 						rows={4}
 						maxLength={1000}
 						required
+						disabled={isRejected}
 					/>
-					<button type="submit" className="form-submit">Continue</button>
+					<button type="submit" className="form-submit" disabled={isRejected}>Continue</button>
 				</form>
 			)}
 
@@ -163,7 +173,7 @@ export const Wedding: React.FC = () => {
 			{stage === 'review' && parsedData && (
 				<div className="review-container fade-in">
 					<p className="review-prompt">Does this information look correct?</p>
-					
+
 					<div className="details-card">
 						<h3>RSVP Details</h3>
 						<ul className="details-list">
