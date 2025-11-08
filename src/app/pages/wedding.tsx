@@ -133,7 +133,7 @@ export const Wedding: React.FC = () => {
 			<div className="wedding-header">
 				<div className="names">Shannon & Adam</div>
 				<div className="event-details">
-					<span className="date">October 24th, 2025</span>
+					<span className="date">October 24th, 2026</span>
 					<span className="separator">•</span>
 					<span className="time">6:00 PM</span>
 				</div>
