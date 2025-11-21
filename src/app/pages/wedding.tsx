@@ -57,7 +57,7 @@ export const Wedding: React.FC = () => {
 				onParsed: (data) => {
 					if (data.names.includes('ERROR')) {
 						setMessage('ERROR: ' + data.details + '\nIf you are having issues, please contact Adam or Shannon.');
-						setParsedData({ names: ['ERROR'], contact: '', contactType: 'email', guestCount: 0});
+						setParsedData({ names: ['ERROR'], contact: '', contactType: 'email', guestCount: 0 });
 						setIsRejected(true);
 						setStage('complete');
 						setInputText('');
@@ -93,8 +93,8 @@ export const Wedding: React.FC = () => {
 				body: encode({
 					"form-name": "wedding-rsvp",
 					names: parsedData.names.join(', '),
-					contact: parsedData.contact,
-					contactType: parsedData.contactType,
+					contact: parsedData.contact || '',
+					contactType: parsedData.contactType || '',
 					guests: parsedData.guestCount,
 					details: parsedData.details || '',
 					originalText: originalText
