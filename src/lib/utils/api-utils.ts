@@ -121,7 +121,7 @@ export const checkForMatch = async (userGuess: string, aiGuess: string): Promise
 
     const guess = await openai.chat.completions.create({
         model: "gpt-5-nano",
-        reasoning_effort: "none",
+        reasoning_effort: "low",
         messages: [
             { role: "user", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." },
             { role: "user", content: prompt }
