@@ -101,12 +101,12 @@ export const generateAiGuess = async (
     instructions += `\n\n# *STRICT RULE: Your response must be only a single word. Do not use any previous round's words.*`;
 
     const guess = await openai.chat.completions.create({
-        model: "gpt-5-mini",
+        model: "gpt-5.1-mini",
+        reasoning_effort: "none",
         messages: [
             { role: "user", content: instructions },
             { role: "user", content: roundInput }
         ],
-        reasoning_effort: "low"
     });
 
     const aiGuess = guess.choices[0].message.content || 'ERROR: No guess returned';
@@ -121,11 +121,11 @@ export const checkForMatch = async (userGuess: string, aiGuess: string): Promise
 
     const guess = await openai.chat.completions.create({
         model: "gpt-5-nano",
+        reasoning_effort: "none",
         messages: [
             { role: "user", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." },
             { role: "user", content: prompt }
         ],
-        reasoning_effort: "low"
     });
 
     console.timeEnd('Time to check for match');

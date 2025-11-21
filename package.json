@@ -1,6 +1,6 @@
 {
-  "name": "react-vector-search-app",
-  "version": "0.1.0",
+  "name": "adam-yuras-website",
+  "version": "1.2.0",
   "private": true,
   "dependencies": {
     "@babel/core": "^7.16.0",
@@ -48,7 +48,7 @@
     "jest-resolve": "^27.4.2",
     "jest-watch-typeahead": "^1.0.0",
     "mini-css-extract-plugin": "^2.4.5",
-    "openai": "^4.104.0",
+    "openai": "^6.9.1",
     "postcss": "^8.4.4",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-loader": "^6.2.1",
