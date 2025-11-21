@@ -101,7 +101,7 @@ export const generateAiGuess = async (
     instructions += `\n\n# *STRICT RULE: Your response must be only a single word. Do not use any previous round's words.*`;
 
     const guess = await openai.chat.completions.create({
-        model: "gpt-5.1-mini",
+        model: "gpt-5.1",
         reasoning_effort: "none",
         messages: [
             { role: "user", content: instructions },

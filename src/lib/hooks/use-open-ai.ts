@@ -10,7 +10,7 @@ const openai = new OpenAI({
 });
 
 const openaiConfig = {
-    model: "gpt-5.1-mini" as const,
+    model: "gpt-5.1" as const,
     reasoning_effort: "none" as const,
 };
 
