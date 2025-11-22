@@ -2,30 +2,51 @@ import React, { useState, useEffect } from 'react';
 import { useOpenAI } from '@/lib/hooks';
 import type { RSVPData } from '@/lib/types';
 
-const CELEBRATION_COLORS = ['#9e7e27', '#46285a'];
+const CELEBRATION_COLORS = [
+	{ bg: '#001D33', flower: '#EDEBDE' },
+	{ bg: '#EDEBDE', flower: '#001D33' },
+	{ bg: '#EDEBDE', flower: '#A1753C' },
+	{ bg: '#AD834C', flower: '#001D33' },
+	{ bg: '#001D33', flower: '#FCEC88' },
+];
 
 export const Wedding: React.FC = () => {
 	const [inputText, setInputText] = useState('');
 	const [originalText, setOriginalText] = useState('');
-	const [stage, setStage] = useState<'input' | 'parsing' | 'review' | 'generating' | 'complete'>('input');
+	const [stage, setStage] = useState<'intro' | 'input' | 'parsing' | 'review' | 'generating' | 'complete'>('intro');
 	const [parsedData, setParsedData] = useState<RSVPData | null>(null);
 	const [message, setMessage] = useState('');
 	const [isEditing, setIsEditing] = useState(false);
 	const [isRejected, setIsRejected] = useState(false);
+	const [giftStage, setGiftStage] = useState<'form' | 'thankyou' | null>(null);
+	const [colorTheme, setColorTheme] = useState(() => CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)]);
 	const { generateText, parseRSVP, moderateText } = useOpenAI();
 
 	useEffect(() => {
-		if (stage !== 'input') {
-			const randomColor = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
-			document.documentElement.style.transition = 'background-color 1.5s ease-in-out';
-			document.documentElement.style.backgroundColor = randomColor;
-		}
-		return () => {
-			if (stage === 'input') {
-				document.documentElement.style.backgroundColor = '';
+		if (!CELEBRATION_COLORS.length) return;
+		setColorTheme(prev => {
+			if (CELEBRATION_COLORS.length === 1) return CELEBRATION_COLORS[0];
+			let next = prev;
+			while (next === prev) {
+				next = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
 			}
-		};
+			return next;
+		});
 	}, [stage]);
+
+	useEffect(() => {
+		document.documentElement.classList.add('transitions-enabled');
+		document.documentElement.style.transition = 'background-color 0.75s ease-in-out';
+		document.documentElement.style.backgroundColor = colorTheme.bg;
+		document.documentElement.style.color = colorTheme.flower;
+		document.documentElement.style.setProperty('--wedding-flower', colorTheme.flower);
+		document.documentElement.style.setProperty('--wedding-foreground', colorTheme.bg);
+		return () => {
+			document.documentElement.style.backgroundColor = '';
+			document.documentElement.style.removeProperty('--wedding-flower');
+			document.documentElement.style.removeProperty('--wedding-foreground');
+		};
+	}, [colorTheme]);
 
 	const encode = (data: Record<string, string | number>) => {
 		return Object.keys(data)
@@ -36,16 +57,20 @@ export const Wedding: React.FC = () => {
 	const handleTextSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!inputText.trim()) return;
+		
+		setStage('parsing');
+		setIsEditing(false);
+		
 		const cleanInput = await cleanSafeInput(inputText);
-		if (!cleanInput) return;
+		if (!cleanInput) {
+			setStage(originalText ? 'review' : 'input');
+			return;
+		}
 
 		const isUpdate = !!originalText;
 		if (!originalText) {
 			setOriginalText(cleanInput);
 		}
-
-		setStage('parsing');
-		setIsEditing(false);
 
 		try {
 			const parseInput = isUpdate
@@ -105,7 +130,7 @@ export const Wedding: React.FC = () => {
 				setText: setMessage,
 				scrollRef: undefined,
 				onDone: () => setStage('complete'),
-				instructions: `Write a message thanking ${parsedData.names.join(' and ')} for RSVPing to Shannon and Adam's wedding on October 24th. They registered ${parsedData.guestCount} guest${parsedData.guestCount > 1 ? 's' : ''}. Keep it under 100 words. Try to make it a bit funny and sarcastic somehow. Refer to the registrants by their first names only. No emojis. (The original submission from the user was: "${originalText}")`
+				instructions: `Write a message thanking ${parsedData.names.join(' and ')} for RSVPing to Shannon and Adam's wedding on October 24th. They registered ${parsedData.guestCount} guest${parsedData.guestCount > 1 ? 's' : ''}. Keep it under 40 words. Try to make it a bit funny and sarcastic somehow. Refer to the registrants by their first names only. No emojis. (The original submission from the user was: "${originalText}")`
 			});
 		} catch (error) {
 			console.error('Error submitting RSVP:', error);
@@ -121,16 +146,33 @@ export const Wedding: React.FC = () => {
 	const handleReset = () => {
 		setInputText('');
 		setOriginalText('');
-		setStage('input');
+		setStage('intro');
 		setMessage('');
 		setParsedData(null);
 		setIsEditing(false);
-		document.documentElement.style.backgroundColor = '';
+		setGiftStage(null);
+	};
+
+	const handleGiftClick = (amount?: number) => {
+		const baseUrl = 'https://www.paypal.com/donate/?business=HH9JUSAVDGCCC&no_recurring=1&item_name=Shannon+%26+Adam%27s+Irish+Honeymoon&currency_code=USD';
+		const url = amount ? `${baseUrl}&amount=${amount}` : baseUrl;
+		window.open(url, '_blank', 'noopener,noreferrer');
+		setGiftStage('thankyou');
 	};
 
 	return (
 		<div className="wedding-wrapper">
 			<div className="wedding-header">
+				{stage === 'intro' && (
+					<div className="intro-stage fade-in">
+						<div className="flower-hero" aria-hidden="true" />
+					</div>
+				)}
+				{stage !== 'intro' && (
+					<div className="intro-stage fade-in">
+						<div className="flower-small" aria-hidden="true" />
+					</div>
+				)}
 				<div className="names">Shannon & Adam</div>
 				<div className="event-details">
 					<span className="date">October 24th, 2026</span>
@@ -141,6 +183,52 @@ export const Wedding: React.FC = () => {
 					The Society of Colonial Dames
 				</a>
 			</div>
+
+			{stage === 'intro' && !giftStage && (
+				<div className="intro-stage fade-in">
+					<div className="cta-row">
+						<button className="confirm-button" onClick={() => setStage('input')}>
+							RSVP
+						</button>
+						<button className="edit-button" type="button" onClick={() => setGiftStage('form')}>
+							Give a gift
+						</button>
+					</div>
+				</div>
+			)}
+
+			{stage === 'intro' && giftStage === 'form' && (
+				<div className="intro-stage fade-in">
+					<div className="form-container fade-in">
+						<p className="gift-description">In lieu of gifts, please donate to our honeymoon trip to Ireland! Shannon wants to ride a horse through the boglands.</p>
+						<div className="gift-buttons">
+							<button className="gift-button" onClick={() => handleGiftClick(25)}>
+								$25
+							</button>
+							<button className="gift-button" onClick={() => handleGiftClick(50)}>
+								$50
+							</button>
+							<button className="gift-button" onClick={() => handleGiftClick(100)}>
+								$100
+							</button>
+							<button className="gift-button gift-button--other" onClick={() => handleGiftClick()}>
+								Other
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{stage === 'intro' && giftStage === 'thankyou' && (
+				<div className="intro-stage fade-in">
+					<div className="form-container fade-in">
+						<p className="thank-you-message">Thank you for your gift!</p>
+						<button className="confirm-button" onClick={handleReset}>
+							Finish
+						</button>
+					</div>
+				</div>
+			)}
 
 			{stage === 'input' && (
 				<form onSubmit={handleTextSubmit} className="text-input-form fade-in form-container">
@@ -159,7 +247,10 @@ export const Wedding: React.FC = () => {
 						required
 						disabled={isRejected}
 					/>
-					<button type="submit" className="form-submit" disabled={isRejected}>Continue</button>
+					<div className="cta-row" style={{ justifyContent: 'end' }}>
+					<button className="edit-button" type="button" onClick={handleReset}>Back</button>
+					<button type="submit" className="confirm-button" disabled={isRejected}>Continue</button>
+					</div>
 				</form>
 			)}
 
@@ -174,7 +265,7 @@ export const Wedding: React.FC = () => {
 				<div className="review-container fade-in">
 					<p className="review-prompt">Does this information look correct?</p>
 
-					<div className="details-card">
+					<div className="form-container details-card slide-up">
 						<h3>RSVP Details</h3>
 						<ul className="details-list">
 							<li>
@@ -223,7 +314,10 @@ export const Wedding: React.FC = () => {
 								rows={4}
 								required
 							/>
-							<button type="submit" className="form-submit">Update</button>
+							<div className="cta-row" style={{ justifyContent: 'end' }}>
+								<button className="edit-button" type="button" onClick={() => setIsEditing(false)}>Cancel</button>
+								<button type="submit" className="confirm-button">Update</button>
+							</div>
 						</form>
 					)}
 				</div>
@@ -236,11 +330,11 @@ export const Wedding: React.FC = () => {
 				</div>
 			)}
 
-			{stage === 'complete' && parsedData && (
+			{stage === 'complete' && parsedData && !giftStage && (
 				<div className="success-container fade-in">
-					<div className="ai-message">{message}</div>
+					<div className="form-container ai-message">{message}</div>
 
-					<div className="details-card slide-up">
+					<div className="form-container details-card slide-up">
 						<h3>Registration Confirmed</h3>
 						<ul className="details-list">
 							<li>
@@ -264,9 +358,47 @@ export const Wedding: React.FC = () => {
 						</ul>
 					</div>
 
-					<button onClick={handleReset} className="reset-button fade-in-delay">
-						Submit Another
-					</button>
+					<div className="cta-row">
+						<button className="confirm-button" type="button" onClick={() => setGiftStage('form')}>
+							Give a gift
+						</button>
+						<button onClick={handleReset} className="edit-button fade-in-delay">
+							Finish
+						</button>
+					</div>
+				</div>
+			)}
+
+			{stage === 'complete' && giftStage === 'form' && (
+				<div className="success-container fade-in">
+					<div className="form-container fade-in">
+						<p className="gift-description">In lieu of gifts, please donate to our honeymoon trip to Ireland! Shannon wants to ride a horse through the boglands</p>
+						<div className="gift-buttons">
+							<button className="gift-button" onClick={() => handleGiftClick(25)}>
+								$25
+							</button>
+							<button className="gift-button" onClick={() => handleGiftClick(50)}>
+								$50
+							</button>
+							<button className="gift-button" onClick={() => handleGiftClick(100)}>
+								$100
+							</button>
+							<button className="gift-button gift-button--other" onClick={() => handleGiftClick()}>
+								Other
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{stage === 'complete' && giftStage === 'thankyou' && (
+				<div className="success-container fade-in">
+					<div className="form-container fade-in">
+						<p className="thank-you-message">Thank you!</p>
+						<button className="confirm-button" onClick={handleReset}>
+							Finish
+						</button>
+					</div>
 				</div>
 			)}
 		</div>
