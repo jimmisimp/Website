@@ -13,7 +13,7 @@ const CELEBRATION_COLORS = [
 export const Wedding: React.FC = () => {
 	const [inputText, setInputText] = useState('');
 	const [originalText, setOriginalText] = useState('');
-	const [stage, setStage] = useState<'intro' | 'input' | 'parsing' | 'review' | 'generating' | 'complete'>('intro');
+	const [stage, setStage] = useState<'intro' | 'input' | 'parsing' | 'review' | 'generating' | 'complete' | 'gift'>('intro');
 	const [parsedData, setParsedData] = useState<RSVPData | null>(null);
 	const [message, setMessage] = useState('');
 	const [isEditing, setIsEditing] = useState(false);
@@ -192,14 +192,14 @@ export const Wedding: React.FC = () => {
 						<button className="confirm-button" onClick={() => setStage('input')}>
 							RSVP
 						</button>
-						<button className="edit-button" type="button" onClick={() => setGiftStage('form')}>
+						<button className="edit-button" type="button" onClick={() => { setGiftStage('form'); setStage('gift'); }}>
 							Give a gift
 						</button>
 					</div>
 				</div>
 			)}
 
-			{stage === 'intro' && giftStage === 'form' && (
+			{stage === 'gift' && giftStage === 'form' && (
 				<div className="intro-stage fade-in">
 					<div className="form-container fade-in">
 						<p className="gift-description">In lieu of gifts, please donate to our honeymoon trip to Ireland! Shannon wants to ride a horse through the boglands.</p>
