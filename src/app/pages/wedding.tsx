@@ -23,7 +23,6 @@ export const Wedding: React.FC = () => {
 	const { generateText, parseRSVP, moderateText } = useOpenAI();
 
 	useEffect(() => {
-		if (!CELEBRATION_COLORS.length) return;
 		setColorTheme(prev => {
 			if (CELEBRATION_COLORS.length === 1) return CELEBRATION_COLORS[0];
 			let next = prev;
@@ -166,6 +165,7 @@ export const Wedding: React.FC = () => {
 				{stage === 'intro' && (
 					<div className="intro-stage fade-in">
 						<div className="flower-hero" aria-hidden="true" />
+						<span className="event-title">The Wedding of</span>
 					</div>
 				)}
 				{stage !== 'intro' && (
@@ -173,6 +173,8 @@ export const Wedding: React.FC = () => {
 						<div className="flower-small" aria-hidden="true" />
 					</div>
 				)}
+
+				
 				<div className="names">Shannon & Adam</div>
 				<div className="event-details">
 					<span className="date">October 24th, 2026</span>
@@ -236,7 +238,7 @@ export const Wedding: React.FC = () => {
 					<span className="subtext">Include names, contact, and the number of guests, as well as any other details you'd like to share.</span>
 					<textarea
 						name="rsvpText"
-						placeholder="e.g. Shannon and Adam will be there! Contact me at shannon@email.com. I'll be bringing 2 guests."
+						placeholder="e.g. Shannon and Adam will be there, along with 2 guests! Contact me at name@example.com."
 						value={inputText}
 						autoComplete='off'
 						onChange={(e) => setInputText(e.target.value)}
