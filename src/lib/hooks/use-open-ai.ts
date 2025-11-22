@@ -9,7 +9,7 @@ const openai = new OpenAI({
     dangerouslyAllowBrowser: true
 });
 
-const openaiConfig = {
+export const openaiConfig = {
     model: "gpt-5.1" as const,
     reasoning_effort: "none" as const,
 };

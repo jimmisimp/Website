@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { RoundResult, VectorSearchResult } from '../types/game-types';
+import { openaiConfig } from '@/lib/hooks/use-open-ai';
 
 const openai = new OpenAI({
     apiKey: process.env.REACT_APP_OPENAIKEY,
@@ -101,8 +102,7 @@ export const generateAiGuess = async (
     instructions += `\n\n# *STRICT RULE: Your response must be only a single word. Do not use any previous round's words.*`;
 
     const guess = await openai.chat.completions.create({
-        model: "gpt-5.1",
-        reasoning_effort: "none",
+        ...openaiConfig,
         messages: [
             { role: "user", content: instructions },
             { role: "user", content: roundInput }
@@ -120,8 +120,8 @@ export const checkForMatch = async (userGuess: string, aiGuess: string): Promise
     console.time('Time to check for match');
 
     const guess = await openai.chat.completions.create({
-        model: "gpt-5-nano",
-        reasoning_effort: "low",
+        ...openaiConfig,
+        max_completion_tokens: 10,
         messages: [
             { role: "user", content: "Determine if the following two words are the same. Ignore capitalization, spacing, and allow for reasonable spelling mistakes. Words which have the same root but are different tenses or grammatical forms may be considered the same, for example 'running' and 'runner', 'jumping' and 'jump', 'perform' and 'performance', 'vote' and 'votes', 'create' and 'creator', etc. would be considered the same. Return only `true` or `false`." },
             { role: "user", content: prompt }
