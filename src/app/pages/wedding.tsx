@@ -239,7 +239,6 @@ export const Wedding: React.FC = () => {
 						placeholder="e.g. Shannon and Adam will be there! Contact me at shannon@email.com. I'll be bringing 2 guests."
 						value={inputText}
 						autoComplete='off'
-						autoFocus
 						onChange={(e) => setInputText(e.target.value)}
 						className="text-input"
 						rows={4}

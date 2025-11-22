@@ -77,7 +77,6 @@ html
 #root
     display: flex
     height: 100vh
-    overflow: auto
 
 body
     overflow: hidden
@@ -964,27 +963,33 @@ input
 
 
 @media screen and (max-width: 800px) 
-    .form-container
-        max-width: 100%
-        width: auto
-        padding: $s-2
-    .text-input-form
-        max-width: 100%
-        width: auto !important
     .wedding-wrapper
         max-width: 100%
         width: auto
-        padding: $s-1
+        padding: 0
         margin-bottom: auto
         margin-top: 0
+        .form-container
+            max-width: 100%
+            width: auto
+            padding: $s-1-5
+        .text-input-form
+            max-width: 100%
+            gap: $s-0-5
+            width: auto !important
         .wedding-header
-            margin-bottom: $s-1-5
+            padding: 0
+            margin-bottom: $s-3
             .names
                 font-size: 3.5rem
         .ai-message
             font-size: 1rem
             line-height: 1.4
         .flower-hero
-            max-width: 360px
+            max-width: 256px
         .flower-small
-            display: none
+            max-width: 100px
+            margin: $s-2 0 $s-1
+        .cta-row
+            gap: $s-1
+            padding-top: $s-1
