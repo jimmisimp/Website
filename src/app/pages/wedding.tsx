@@ -221,7 +221,7 @@ export const Wedding: React.FC = () => {
 				</div>
 			)}
 
-			{stage === 'intro' && giftStage === 'thankyou' && (
+			{stage === 'gift' && giftStage === 'thankyou' && (
 				<div className="intro-stage fade-in">
 					<div className="form-container fade-in">
 						<p className="thank-you-message">Thank you for your gift!</p>
