@@ -1,15 +1,42 @@
 import { useCallback } from 'react';
 
 export const useColorUtils = () => {
+    const FALLBACK_HEX = '#000000';
+
+    const normalizeHexColor = useCallback((hexColor?: string | null): string => {
+        if (typeof hexColor !== 'string') {
+            return FALLBACK_HEX;
+        }
+
+        const value = hexColor.trim();
+        if (!value) {
+            return FALLBACK_HEX;
+        }
+
+        const prefixed = value.startsWith('#') ? value : `#${value}`;
+
+        if (/^#([A-Fa-f0-9]{6})$/.test(prefixed)) {
+            return prefixed;
+        }
+
+        if (/^#([A-Fa-f0-9]{3})$/.test(prefixed)) {
+            const shorthand = prefixed.slice(1);
+            return `#${shorthand[0]}${shorthand[0]}${shorthand[1]}${shorthand[1]}${shorthand[2]}${shorthand[2]}`;
+        }
+
+        return FALLBACK_HEX;
+    }, []);
+
     const getLuminance = useCallback((hexColor: string): number => {
-        const rgb = parseInt(hexColor.slice(1), 16);
+        const normalizedColor = normalizeHexColor(hexColor);
+        const rgb = parseInt(normalizedColor.slice(1), 16);
         const r = (rgb >> 16) & 0xff;
         const g = (rgb >> 8) & 0xff;
         const b = (rgb >> 0) & 0xff;
 
         const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         return luma;
-    }, []);
+    }, [normalizeHexColor]);
 
     const getTextColor = useCallback((backgroundColor: string): string => {
         const luma = getLuminance(backgroundColor);
@@ -21,15 +48,16 @@ export const useColorUtils = () => {
     }, []);
 
     const hexToRgb = useCallback((hex: string): { r: number; g: number; b: number } | null => {
-        if (!isValidHexColor(hex)) return null;
+        const normalizedHex = normalizeHexColor(hex);
+        if (!isValidHexColor(normalizedHex)) return null;
         
-        const rgb = parseInt(hex.slice(1), 16);
+        const rgb = parseInt(normalizedHex.slice(1), 16);
         return {
             r: (rgb >> 16) & 0xff,
             g: (rgb >> 8) & 0xff,
             b: (rgb >> 0) & 0xff
         };
-    }, [isValidHexColor]);
+    }, [isValidHexColor, normalizeHexColor]);
 
     const rgbToHex = useCallback((r: number, g: number, b: number): string => {
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
@@ -55,10 +83,18 @@ export const useColorUtils = () => {
     }, [hexToRgb, rgbToHex]);
 
     const getDarkestColor = useCallback((colors: string[]): string => {
-        return colors.reduce((darkest, color) => {
+        const validColors = colors
+            .map(color => normalizeHexColor(color))
+            .filter(isValidHexColor);
+
+        if (!validColors.length) {
+            return FALLBACK_HEX;
+        }
+
+        return validColors.reduce((darkest, color) => {
             return getLuminance(color) < getLuminance(darkest) ? color : darkest;
         });
-    }, [getLuminance]);
+    }, [getLuminance, isValidHexColor, normalizeHexColor]);
 
     const getAccessibleDarkColor = useCallback((hex: string, targetColor: string = '#ffffff'): string => {
         let darkColor = hex;

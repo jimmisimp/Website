@@ -3,9 +3,9 @@ import { z } from "zod";
 export type ColorPalette = z.infer<typeof ColorPaletteSchema>;
 export const ColorPaletteSchema = z.object({
     colors: z.array(z.object({
-        hex: z.string().describe('A hex color value. Example: "#000000"'),
+        hex: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Must be a valid hex color value').describe('A hex color value. Example: "#000000"'),
         name: z.string().describe('A name for the color. Example: "Dead pixel"')
-    })),
+    })).min(1),
     name: z.string().describe('A name for the palette. Example: "LCD Screen"'),
     caption: z.string().describe('A short caption for the palette. Example: "Inspired by the colors of an LCD screen after a hard day\'s work."'),
 });

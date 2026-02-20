@@ -18,6 +18,18 @@ const styleInstructions = "Style and tone: Don't be too cutesy or inappropriate.
 
 const profile = `Write a sentence. Keep it under 100 words, and try to avoid too many adjectives. Give it a slightly humorous and casual tone but don't be too cutesy, self-deprecating, or include any jokes at Adam's expense. Your response must be about the subject, Adam Yuras, a Product Manager, Designer, and Developer from Philadelphia PA. He works at Comcast. It should describe a bit about who he is and what he does. More about him from his profile: Designing, prototyping, and testing tools for customer-facing agents in the chat and voice space, for technicians, and retail associates with a focus on AI-enabled features. I'm a hands-on designer who prefers to explore solutions by developing prototypes in code. I'm a designer who thinks like a developer. I've helped develop the skills of those I work with. I'm a strong researcher, but I'm also business minded and know how to keep things moving and when we're wasting our time. ` + topSkills.join('\n') + '\n' + experiences.map(experience => `${experience.company} - ${experience.role} - ${experience.period} - ${experience.location} - ${experience.bullets.join('\n')}`).join('\n')
 
+const FALLBACK_PALETTE: ColorPalette = {
+    colors: [
+        { hex: '#202124', name: 'Deep Slate' },
+        { hex: '#3C4043', name: 'Graphite' },
+        { hex: '#5F6368', name: 'Steel' },
+        { hex: '#9AA0A6', name: 'Mist' },
+        { hex: '#DADCE0', name: 'Cloud' },
+    ],
+    name: 'Fallback Palette',
+    caption: 'I had trouble generating colors just now, so here is a stable fallback palette.'
+};
+
 export const useOpenAI = () => {
     const moderateText = useCallback(async (input: string): Promise<string> => {
         const response = await openai.moderations.create({
@@ -81,15 +93,23 @@ export const useOpenAI = () => {
             });
 
             const response = completion.choices[0].message.content || '';
-            const parsedResponse: ColorPalette = JSON.parse(response);
-            if (onPalette) onPalette(parsedResponse);
+            const parsedJson = JSON.parse(response);
+            const parsed = ColorPaletteSchema.safeParse(parsedJson);
+            const palette = parsed.success ? parsed.data : FALLBACK_PALETTE;
+
+            if (!parsed.success) {
+                console.warn('Palette validation failed, using fallback palette.', parsed.error.flatten());
+            }
+
+            if (onPalette) onPalette(palette);
             setTimeout(() => {
                 scrollRef?.current?.scrollIntoView({ behavior: 'smooth' });
             }, 200);
-            return parsedResponse;
+            return palette;
         } catch (error) {
             console.error('Error generating colors:', error);
-            return { colors: [], name: 'Error', caption: 'Error generating colors' };
+            if (onPalette) onPalette(FALLBACK_PALETTE);
+            return FALLBACK_PALETTE;
         }
     }, []);
 

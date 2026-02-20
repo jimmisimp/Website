@@ -21,7 +21,7 @@ const animateText = async (text: string, setText: (value: string) => void, delay
 };
 
 export const TextGenerator = () => {
-    const { getTextColor, getDarkestColor, getAccessibleDarkColor } = useColorUtils();
+    const { getTextColor, getDarkestColor, getAccessibleDarkColor, isValidHexColor } = useColorUtils();
     const { feedItems, addFeedItem, updateFeedItem, removeFeedItem, generateId } = useFeedItems();
     const { generateColorPalette, generateText } = useOpenAI();
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,10 +48,18 @@ export const TextGenerator = () => {
     }, []);
 
     const setBackgroundColor = useCallback((palette: ColorPalette) => {
+        const paletteHexes = palette.colors
+            .map(color => color?.hex)
+            .filter((hex): hex is string => typeof hex === 'string' && isValidHexColor(hex));
+
+        if (!paletteHexes.length) {
+            return;
+        }
+
         document.documentElement.style.backgroundColor = getAccessibleDarkColor(
-            getDarkestColor(palette.colors.map(c => c.hex))
+            getDarkestColor(paletteHexes)
         );
-    }, [getAccessibleDarkColor, getDarkestColor]);
+    }, [getAccessibleDarkColor, getDarkestColor, isValidHexColor]);
 
     const addTextItem = useCallback(async (text: string, speed?: number) => {
         const id = generateId();
