@@ -1,5 +1,5 @@
 import '@/lib/assets/stylesheet.sass';
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Suspense, lazy, memo, type ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 const TextGenerator = lazy(() =>
@@ -17,7 +17,7 @@ const Resume = lazy(() =>
   import('@/app/pages/resume').then(mod => ({ default: mod.Resume }))
 );
 
-const PageShell = ({
+const PageShell = memo(({
   wrapper,
   children,
 }: {
@@ -27,23 +27,22 @@ const PageShell = ({
   <div className={`center-wrapper ${wrapper}`}>
     {children}
   </div>
-);
+));
 
-export const Main = () => (
+const HomeRoute = memo(() => (
+  <PageShell wrapper="main-wrapper">
+    <img src="guy_white.svg" className="guy" alt="Website logo" />
+    <div className="name">adam yuras</div>
+    <div className="subheader">is creating ai-powered experiences</div>
+    <TextGenerator />
+  </PageShell>
+));
+
+export const Main = memo(() => (
   <Router>
     <Suspense fallback={<PageShell wrapper="main-wrapper">Loading...</PageShell>}>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <PageShell wrapper="main-wrapper">
-              <img src="guy_white.svg" className="guy" alt="Website logo" />
-              <div className="name">adam yuras</div>
-              <div className="subheader">is creating ai-powered experiences</div>
-              <TextGenerator />
-            </PageShell>
-          }
-        />
+        <Route path="/" element={<HomeRoute />} />
         <Route
           path="/mindmeld"
           element={
@@ -71,4 +70,4 @@ export const Main = () => (
       </Routes>
     </Suspense>
   </Router>
-);
+));

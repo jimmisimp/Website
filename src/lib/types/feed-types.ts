@@ -18,6 +18,16 @@ export interface ButtonFeedItem extends FeedItemBase {
     onClick: () => void;
 }
 
+export interface ButtonGroupFeedButton {
+    text: string;
+    onClick: () => void;
+}
+
+export interface ButtonGroupFeedItem extends FeedItemBase {
+    type: 'button-group';
+    buttons: ButtonGroupFeedButton[];
+}
+
 export interface FormFeedItem extends FeedItemBase {
     type: 'form';
     prompt: string;
@@ -45,4 +55,4 @@ export interface LinkFeedItem extends FeedItemBase {
     label: string;
 }
 
-export type FeedItem = TextFeedItem | ButtonFeedItem | FormFeedItem | GeneratingFeedItem | PaletteFeedItem | LinkFeedItem;
+export type FeedItem = TextFeedItem | ButtonFeedItem | ButtonGroupFeedItem | FormFeedItem | GeneratingFeedItem | PaletteFeedItem | LinkFeedItem;
