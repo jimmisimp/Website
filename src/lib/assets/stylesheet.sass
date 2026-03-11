@@ -1,1007 +1,926 @@
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&display=swap')
-@import url('https://fonts.googleapis.com/css2?family=Vina+Sans&display=swap')
-@import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@700&display=swap')
-
-$material-base: rgb(221, 213, 226)
-$material-inset: #cfcece
-$material-emphasis: #adcdfc
-
-$text-white: #f6f6f6
-$text-base: #171717
-$text-hover: #2c2c2c
-$text-down: #3d3d3d
-$font-sans: 'Assistant', Arial, Helvetica, sans-serif
-$font-block: 'Vina Sans', Arial, Helvetica, sans-serif
-$font-mono: 'Anonymous Pro', Courier, monospace
-$color-red-1: #ff4c4c
-$color-green-1: #5fc95f
-$color-indigo-0: rgb(196, 167, 214)
-$color-indigo-1: rgb(130, 81, 161)
-$color-indigo-2: rgb(70, 40, 90)
-$color-indigo-3: #1b0e22
-
-$s-0-25: 2px
-$s-0-5: 4px
-$s-1: 8px
-$s-1-5: 12px
-$s-2: 16px
-$s-2-5: 20px
-$s-3: 24px
-$s-4: 32px
-$s-5: 40px
-$s-6: 48px
-$s-7: 56px
-$s-8: 64px
-$s-9: 72px
-$s-10: 80px
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap')
 
 :root
-    --color-red-1: #{$color-red-1}
-    --color-green-1: #{$color-green-1}
-    --color-indigo-0: #{$color-indigo-0}
-    --color-indigo-1: #{$color-indigo-1}
-    --color-indigo-2: #{$color-indigo-2}
-    --color-indigo-3: #{$color-indigo-3}
-    --material-base: #{$material-base}
-    --material-inset: #{$material-inset}
-    --text-base: #{$text-base}
+    --page: #f3efe7
+    --surface: #fbfaf7
+    --surface-muted: #ece6dc
+    --surface-strong: #dad1c4
+    --ink: #171614
+    --muted: #5f594f
+    --line: #c1bbb2
+    --line-strong: #8f8577
+    --accent: #184f3a
+    --accent-strong: #0f3527
+    --inverse: #121212
+    --inverse-soft: #232321
+    --inverse-line: #40403a
+    --white: #ffffff
+    --radius-sm: 6px
+    --radius-md: 10px
+    --space-1: 8px
+    --space-2: 12px
+    --space-3: 16px
+    --space-4: 24px
+    --space-5: 32px
+    --space-6: 48px
+    --space-7: 64px
+    --space-8: 96px
+    --font-sans: 'Space Grotesk', 'Segoe UI', sans-serif
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace
 
-%center-shell
-    display: grid
-    color: $text-white
-    justify-items: center
-    text-align: center
-    margin: auto
-    padding: $s-1
-    max-width: 640px
-    width: 100%
-    font-family: $font-block
-    gap: $s-0-5
-
-@mixin stack($gap: 0, $align: stretch)
-    display: flex
-    flex-direction: column
-    gap: $gap
-    align-items: $align
-
-@mixin surface($bg: $color-indigo-3, $radius: $s-1, $padding: $s-1-5)
-    background-color: $bg
-    border-radius: $radius
-    padding: $padding
+*
+    box-sizing: border-box
 
 html
-    background-color: $color-indigo-3
-    &.transitions-enabled
-        transition: background-color 2s ease
-
-#root
-    display: flex
-    height: 100vh
+    min-height: 100%
+    background-color: var(--page)
 
 body
+    min-height: 100%
     margin: 0
-    overflow: auto
+    background-color: var(--page)
+    color: var(--ink)
+    font-family: var(--font-sans)
+    -webkit-font-smoothing: antialiased
+    -moz-osx-font-smoothing: grayscale
 
-.flex
+a
+    color: inherit
+    text-decoration: none
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease
+
+button,
+input,
+textarea
+    font: inherit
+
+button
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible
+    outline: 2px solid var(--accent)
+    outline-offset: 2px
+
+#root
+    min-height: 100vh
+
+.page-shell
+    width: 100%
+
+.page-shell--loading
+    min-height: 100vh
+    display: grid
+    place-items: center
+    padding: var(--space-6) var(--space-4)
+    color: var(--muted)
+
+.page-shell--home
+    min-height: 100vh
+
+.page-shell--wedding
+    min-height: 100vh
     display: flex
+    justify-content: center
+    padding: var(--space-5) var(--space-3)
 
-.gap-1
-    gap: $s-1
-.gap-2
-    gap: $s-2
-.gap-3
-    gap: $s-3
-.gap-4
-    gap: $s-4
+.page-shell--resume
+    min-height: 100vh
+    display: flex
+    justify-content: center
+    padding: var(--space-6) var(--space-4)
 
-.flex-col
-    flex-direction: column
+.home-page
+    width: 100%
 
-fieldset
-    border: none
-    padding: 0px
-    margin: 0px
+.home-title-stage__inner
+    width: 100%
+    max-width: 1280px
+    margin: 0 auto
 
-.center-wrapper
-    @extend %center-shell
+.home-header-shell
+    z-index: 5
+    width: 100%
+    background-color: var(--page)
+    border-bottom: 1px solid var(--line)
+    padding: 0 var(--space-6)
+    position: fixed
 
-.mind-meld-wrapper
-    @extend %center-shell
+.home-frame
+    width: 100%
+    max-width: 1280px
+    margin: 0 auto
+
+.home-title-stage
+    width: 100%
+
+.home-intro-stage
+    padding: 0 0 var(--space-6)
+
+.home-intro-sticky
+    display: grid
+    align-content: start
+
+.home-header--intro
+    position: relative
+    z-index: 2
+
+.home-header
+    display: flex
+    align-items: flex-start
+    justify-content: space-between
+    gap: var(--space-4)
+    padding: var(--space-4) 0
+    max-width: 1280px
+    margin: 0 auto
+
+.home-eyebrow,
+.home-section-label,
+.home-proof-label,
+.home-wordmark
     margin: 0
+    font-family: var(--font-mono)
+    font-size: 0.78rem
+    letter-spacing: 0.08em
+    text-transform: uppercase
+
+.home-closing-label
+    font-size: 0.95rem
+    letter-spacing: 0.08em
+    color: var(--white)
+
+.home-wordmark
+    color: var(--muted)
+    margin-top: var(--space-1)
+
+.home-nav
+    display: flex
+    align-items: center
+    gap: var(--space-3)
+    font-size: 0.95rem
+    color: var(--muted)
+
+.home-nav a
+    border-bottom: 1px solid transparent
+
+.home-nav a:hover
+    border-bottom-color: var(--line-strong)
+    color: var(--ink)
+
+.home-hero
+    display: grid
+    grid-template-columns: minmax(0, 2.1fr) minmax(260px, 0.95fr)
+    gap: var(--space-5)
+    padding: var(--space-8) var(--space-6)
+    border: 1px solid var(--line)
+    background-color: var(--surface)
+
+.home-hero--split
+    grid-template-columns: 1fr
+    gap: var(--space-5)
+    border: none
+    background-color: transparent
     padding: 0
-    width: 100vw
-    height: 100vh
-    max-width: none
-    max-height: none
-    @media (max-width: 800px)
-        align-content: flex-start
+
+.home-hero-shell
+    position: relative
+    will-change: clip-path, transform
+
+.home-hero-headline-block
+    display: grid
+    align-content: center
+    gap: var(--space-4)
+    padding: var(--space-6)
+    height: 80vh
+    background-color: var(--ink)
+    color: var(--surface)
+    will-change: clip-path, transform
+
+.home-hero-headline-block--bleed
+    width: 100%
+    padding-inline: 0
+
+.home-title-stage__inner
+    display: grid
+    align-content: center
+    min-height: inherit
+    padding-top: var(--space-8)
+
+.home-hero-copy-block
+    display: grid
+    gap: var(--space-5)
+    max-width: 760px
+
+.home-hero-reveal-block
+    will-change: transform, opacity
+
+.home-hero--body
+    padding-top: var(--space-7)
+
+.home-hero-copy
+    display: grid
+    gap: var(--space-4)
+
+.home-section-label
+    color: var(--muted)
+
+.home-section-label--inverse
+    color: rgba(255, 255, 255, 0.72)
+
+.home-title
+    margin: 0
+    max-width: 10ch
+    font-size: clamp(4rem, 9.5vw, 8rem)
+    line-height: 0.95
+    letter-spacing: -0.06em
+    display: grid
+
+.home-title-line-shell
+    display: block
+    overflow: hidden
+    padding-bottom: 0.04em
+
+.home-title-line
+    display: block
+    transform-origin: left center
+
+.home-lede
+    margin: 0
+    max-width: 24ch
+    font-size: clamp(1.35rem, 2.5vw, 1.9rem)
+    line-height: 1.2
+
+.home-support
+    margin: 0
+    max-width: 62ch
+    color: var(--ink)
+    font-size: 1.05rem
+    line-height: 1.55
+
+.home-actions
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-3)
+
+.home-button,
+.main-button
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    min-height: 46px
+    padding: 0 var(--space-4)
+    border: 1px solid var(--line-strong)
+    border-radius: var(--radius-sm)
+    background-color: transparent
+    color: var(--ink)
+    cursor: pointer
+
+.home-button:hover,
+.main-button:hover
+    border-color: var(--ink)
+    background-color: var(--surface-muted)
+
+.home-button--primary
+    background-color: var(--inverse)
+    border-color: var(--inverse)
+    color: var(--white)
+
+.home-button--primary:hover
+    background-color: var(--inverse-soft)
+    border-color: var(--inverse-soft)
+
+.home-button--light
+    background-color: var(--white)
+    border-color: rgba(255, 255, 255, 0.7)
+    color: var(--inverse)
+
+.home-button--light:hover
+    background-color: rgba(255, 255, 255, 0.9)
+    border-color: var(--white)
+
+.home-button--ghost
+    color: var(--white)
+    border-color: rgba(255, 255, 255, 0.35)
+
+.home-button--ghost:hover
+    background-color: rgba(255, 255, 255, 0.08)
+    border-color: rgba(255, 255, 255, 0.55)
+
+.home-proof-panel
+    display: grid
+    gap: var(--space-4)
+    align-content: start
+
+.home-proof-panel--row
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    align-content: stretch
+
+.home-proof-item
+    display: grid
+    gap: var(--space-2)
+    padding: var(--space-4)
+    border: 1px solid var(--line)
+    background-color: var(--page)
+
+.home-proof-item p
+    margin: 0
+    color: var(--muted)
+    line-height: 1.55
+
+.home-section
+    display: grid
+    gap: var(--space-5)
+    padding: var(--space-7) 0
+    border-top: 1px solid var(--line)
+
+.home-section-heading
+    display: grid
+    gap: var(--space-2)
+    max-width: 760px
+
+.home-section-heading h2
+    margin: 0
+    font-size: clamp(2rem, 4vw, 3rem)
+    line-height: 1.05
+    letter-spacing: -0.04em
+
+.home-closing h2
+    margin: 0
+    font-size: clamp(1.8rem, 3vw, 2.5rem)
+    max-width: 24ch
+    line-height: 1.05
+    letter-spacing: -0.04em
+
+.home-section-copy,
+.home-two-column
+    display: grid
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+    gap: var(--space-5)
+
+.home-section-copy p,
+.home-two-column p,
+.home-card p,
+.home-list-block p
+    margin: 0
+    color: var(--muted)
+    line-height: 1.7
+
+.home-card-grid
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: var(--space-4)
+
+.home-card
+    display: grid
+    gap: var(--space-3)
+    min-height: 220px
+    padding: var(--space-4)
+    border: 1px solid var(--line)
+    background-color: var(--surface)
+
+.home-card h3
+    margin: 0
+    font-size: 1.1rem
+    line-height: 1.2
+
+.home-timeline
+    position: relative
+    display: grid
+    gap: var(--space-4)
+    padding-left: 48px
+
+.home-timeline-spine
+    position: absolute
+    top: 0
+    bottom: 0
+    left: 24px
+    width: 1px
+    background-color: var(--line)
+    transform-origin: top center
+
+.home-timeline-item
+    position: relative
+    display: grid
+    grid-template-columns: 72px minmax(0, 1fr)
+    gap: var(--space-4)
+    align-items: start
+
+.home-timeline-marker
+    position: relative
+    display: grid
+    justify-items: center
+    gap: var(--space-2)
+    padding-top: var(--space-1)
+
+.home-timeline-index
+    font-family: var(--font-mono)
+    font-size: 0.8rem
+    letter-spacing: 0.08em
+    color: var(--muted)
+
+.home-timeline-dot
+    width: 14px
+    height: 14px
+    border-radius: 999px
+    border: 1px solid var(--line-strong)
+    background-color: var(--surface)
+    box-shadow: 0 0 0 6px var(--page)
+
+.home-timeline-card
+    display: grid
+    gap: var(--space-3)
+    min-height: 170px
+    padding: var(--space-4)
+    border: 1px solid var(--line)
+    background-color: var(--surface)
+    align-content: start
+
+.home-timeline-card h3
+    margin: 0
+    font-size: 1.1rem
+    line-height: 1.2
+
+.home-timeline-card p
+    margin: 0
+    color: var(--muted)
+    line-height: 1.7
+
+.home-model-chip
+    display: inline-flex
+    align-items: center
+    min-height: 27px
+    padding: 0 6px
+    background-color: var(--page)
+    font-family: var(--font-mono)
+    white-space: nowrap
+    vertical-align: baseline
+
+.home-timeline-role
+    font-family: var(--font-mono)
+    font-size: 0.78rem
+    letter-spacing: 0.08em
+    text-transform: uppercase
+    color: var(--muted)
+
+.home-list-block
+    display: grid
+    gap: var(--space-3)
+
+.home-tag-block
+    display: flex
+    flex-wrap: wrap
+    align-content: flex-start
+    gap: var(--space-2)
+
+.home-tag
+    display: inline-flex
+    align-items: center
+    min-height: 36px
+    padding: 0 var(--space-3)
+    border: 1px solid var(--line)
+    border-radius: var(--radius-sm)
+    background-color: var(--surface-muted)
+    color: var(--ink)
+    font-size: 0.95rem
+
+.home-closing
+    display: grid
+    gap: var(--space-5)
+    margin: var(--space-6) 0 0
+    padding: var(--space-8) var(--space-6)
+    border: 1px solid var(--inverse-line)
+    background-color: var(--inverse)
+    color: var(--white)
+
+.page-shell--resume > .resume
+    width: 100%
+    max-width: 860px
+
+.resume
+    display: grid
+    gap: var(--space-5)
+
+.resume__header
+    display: grid
+    gap: var(--space-3)
+    padding-bottom: var(--space-5)
+    border-bottom: 1px solid var(--line)
+
+.name
+    margin: 0
+    font-size: clamp(2.5rem, 7vw, 4.75rem)
+    line-height: 0.95
+    letter-spacing: -0.06em
+    text-transform: lowercase
+
+.resume__name
+    color: var(--ink)
+    font-weight: 700
+
+.resume__title
+    margin: 0
+    max-width: 20ch
+    font-size: 1.45rem
+    line-height: 1.2
+
+.resume__lead
+    max-width: 60ch
+    color: var(--muted)
+    line-height: 1.7
+
+.resume__actions
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-3)
+
+.main-button.small
+    min-height: 40px
+    padding: 0 var(--space-3)
+    font-size: 0.95rem
+
+.resume__experience
+    display: grid
+    gap: var(--space-3)
+
+.resume__experience h2
+    margin: 0
+    font-family: var(--font-mono)
+    font-size: 0.82rem
+    letter-spacing: 0.08em
+    text-transform: uppercase
+    color: var(--muted)
+
+.resume__experience-list
+    display: grid
+    gap: var(--space-3)
+
+.resume__experience-item
+    display: grid
+    gap: var(--space-3)
+    padding: var(--space-4)
+    border: 1px solid var(--line)
+    background-color: var(--surface)
+
+.resume__experience-item h3,
+.resume__experience-item h4
+    margin: 0
+
+.resume__experience-item p
+    margin: 0
+    color: var(--muted)
+    line-height: 1.6
+
+.resume__experience-item ul
+    margin: 0
+    padding-left: 20px
+    color: var(--muted)
+    display: grid
+    gap: var(--space-2)
+
+.resume__experience-item li
+    line-height: 1.6
+
+.resume__experience-meta
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-1)
+    color: var(--muted)
+    font-size: 0.95rem
+
+.resume__experience-meta span:not(:last-child)::after
+    content: '•'
+    margin-left: var(--space-1)
 
 .wedding-wrapper
-    @extend %center-shell
-    max-width: 520px
-    font-family: $font-sans
+    width: 100%
+    max-width: 560px
+    display: grid
+    gap: var(--space-4)
+    color: var(--wedding-flower, #f7f2e8)
     font-weight: 500
-    padding-bottom: $s-6
-    color: var(--wedding-flower, $text-white)
-    
-    .wedding-header
-        margin-bottom: $s-4
-        padding: $s-3 0
-        color: inherit
-        
-        .event-title
-            font-size: 1.4rem
-            font-weight: 600
-            margin-bottom: 0
-            opacity: 0.95
-        
-        .names
-            font-family: $font-block
-            font-size: 4rem
-            font-weight: 500
-            margin-bottom: $s-1-5
-            line-height: 1.0
-            letter-spacing: 1px
-        
-        .event-details
-            display: flex
-            align-items: center
-            justify-content: center
-            gap: $s-1-5
-            font-size: 1.3rem
-            margin-bottom: $s-1-5
-            opacity: 0.95
-            
-            .separator
-                opacity: 0.5
-        
-        .venue
-            display: inline-block
-            color: var(--wedding-flower, rgba(255, 255, 255, 0.85))
-            text-decoration: none
-            font-size: 1.1rem
-            font-style: italic
-            transition: all 200ms ease
-            border-bottom: 1px dotted currentColor
-            padding-bottom: 2px
-            
-            &:hover
-                border-bottom: 1px solid currentColor
 
-    .intro-stage
-        @include stack($s-3, center)
-        width: 100%
-    
-    .cta-row
-        display: flex
-        gap: $s-2
-        flex-wrap: wrap
-        justify-content: center
+.wedding-header
+    display: grid
+    justify-items: center
+    gap: var(--space-2)
+    padding-top: var(--space-4)
+    text-align: center
 
-    .cta-button
-        padding: $s-2 $s-4
-        border-radius: $s-9
-        border: 2px solid var(--wedding-flower, rgba(255, 255, 255, 0.25))
-        background: rgba(255, 255, 255, 0.08)
-        color: inherit
-        font-family: $font-sans
-        font-size: 1.05rem
-        cursor: pointer
-        transition: all 150ms ease
-        backdrop-filter: blur(8px)
-        &:hover
-            transform: translateY(-2px)
-            background: rgba(255, 255, 255, 0.4)
-        &:active
-            transform: translateY(0)
-        &.secondary
-            background: transparent
-            border-style: dashed
+.event-title
+    font-family: var(--font-mono)
+    font-size: 0.82rem
+    letter-spacing: 0.08em
+    text-transform: uppercase
+    opacity: 0.85
 
-    .flower-hero, .flower-small
-        background-color: var(--wedding-flower, rgba(255,255,255,0.65))
-        mask: url('./wedding_flower.svg') center / contain no-repeat
-        -webkit-mask: url('./wedding_flower.svg') center / contain no-repeat
-        width: 100%
-        max-width: 300px
-        margin-bottom: $s-2
-        aspect-ratio: 673 / 850
+.names
+    font-size: clamp(3.5rem, 12vw, 5.5rem)
+    line-height: 0.92
+    letter-spacing: -0.06em
 
-    .flower-hero
-        filter: drop-shadow(0 12px 40px rgba(0,0,0,0.35))
+.event-details
+    display: flex
+    flex-wrap: wrap
+    justify-content: center
+    gap: var(--space-2)
+    font-size: 1rem
 
-    .flower-small
-        margin: $s-2 0
-        max-width: 220px
+.separator
+    opacity: 0.45
 
-    .text-input-form, .edit-form
-        @include stack($s-1-5)
-        width: 100%
-        label
-            font-size: 1.2rem
-            margin-bottom: 0
-        
-        .text-input
-            padding: $s-2
-            resize: none
-            font-family: $font-sans
-            font-size: 1rem
-            background: rgba(255, 255, 255, 0.1)
-            border: 1px solid rgba(0, 0, 0, 0.5)
-            border-radius: $s-0-5
-            color: var(--wedding-flower, $text-white)
-            transition: all 150ms ease
-            
-            &::placeholder
-                white-space: break-spaces
-                color: var(--wedding-flower, rgba(255, 255, 255, 0.5))
-                filter: saturate(0.5)
-            
-            &:focus
-                outline: none
-                border: 1px solid var(--wedding-flower, rgba(255, 255, 255, 0.6))
-                background: rgba(255, 255, 255, 0.15)
-    
-    .review-container
-        @include stack($s-3, center)
-        width: 100%
-        
-        .review-prompt
-            font-size: 1.3rem
-            margin-top: 0px
-            margin-bottom: $s-1
-            font-weight: 500
-        
-        .button-group
-            display: flex
-            gap: $s-2
-            width: 100%
-            justify-content: center
-            flex-wrap: wrap
-        
-    .confirm-button, .edit-button
-        padding: $s-2 $s-4
-        font-family: $font-sans
-        font-size: 1.1rem
-        font-weight: 600
-        border-radius: $s-9
-        cursor: pointer
-        transition: all 150ms ease
-        border: 2px solid var(--wedding-flower, rgba(255, 255, 255, 0.4))
-        
-    .confirm-button
-        background: var(--wedding-flower, rgba(55, 216, 117, 0.4))
-        color: var(--wedding-foreground, white)
-        font-weight: 600
-        &:hover
-            opacity: 0.8
-            transform: translateY(-2px)
-        &:active
-            transform: translateY(0)
-            opacity: 0.6
-    
-    .edit-button
-        background: transparent
-        color: var(--wedding-flower)
-        &:hover
-            background: rgba(255, 255, 255, 0.1)
-            transform: translateY(-2px)
-        &:active
-            transform: translateY(0)
-    
-    .generating-message
-        display: flex
-        flex-direction: column
-        align-items: center
-        gap: $s-2
-        padding: $s-4
-        p
-            font-size: 1.2rem
-            opacity: 0.9
-    
-    .spinner
-        width: 40px
-        height: 40px
-        border: 4px solid rgba(255, 255, 255, 0.3)
-        border-top-color: white
-        border-radius: 50%
-        animation: spin 1s linear infinite
-    
-    .success-container
-        @include stack($s-3, center)
-        width: 100%
-    
-    .ai-message
-        font-size: 1.2rem
-        line-height: 1.5
-        font-weight: 400
-        padding: $s-3
-        background: rgba(255, 255, 255, 0.1)
-        border-radius: $s-0-5
-        backdrop-filter: blur(10px)
-        text-align: left
-        width: 100%
-    
-    .details-card
-        @include surface(rgba(255, 255, 255, 0.05), $s-0-5, $s-3)
-        width: 100%
-        backdrop-filter: blur(10px)
-        h3
-            margin: 0 0 $s-2 0
-            font-size: 1.2rem
-        
-        .details-list
-            list-style: none
-            padding: 0
-            margin: 0
-            @include stack($s-1-5)
-            li
-                display: flex
-                justify-content: space-between
-                padding: $s-1-5
-                background: rgba(0, 0, 0, 0.05)
-                border-radius: $s-0-5
-                .label
-                    font-weight: 600
-                    opacity: 0.8
-                .value
-                    font-weight: 400
-    
-    .reset-button
-        padding: $s-1-5 $s-3
-        background: rgba(255, 255, 255, 0.2)
-        border: 2px solid rgba(255, 255, 255, 0.4)
-        color: white
-        font-family: $font-sans
-        font-size: 1rem
-        border-radius: $s-0-5
-        cursor: pointer
-        transition: all 150ms ease
-        backdrop-filter: blur(10px)
-        &:hover
-            background: rgba(255, 255, 255, 0.3)
-            transform: translateY(-2px)
-        &:active
-            transform: translateY(0)
+.venue
+    border-bottom: 1px solid currentColor
+    padding-bottom: 2px
 
-    .gift-description
-        font-size: 1.1rem
-        text-align: center
-        margin-bottom: $s-3
-        opacity: 0.95
+.venue:hover
+    opacity: 0.82
 
-    .gift-buttons
-        display: grid
-        grid-template-columns: repeat(2, 1fr)
-        gap: $s-2
-        width: 100%
-    .gift-button
-        padding: $s-2-5 $s-3
-        font-family: $font-sans
-        font-size: 1.1rem
-        font-weight: 600
-        border-radius: $s-9
-        cursor: pointer
-        transition: all 150ms ease
-        border: 2px solid var(--wedding-flower, rgba(255, 255, 255, 0.4))
-        background: var(--wedding-flower, rgba(255, 255, 255, 0.1))
-        color: var(--wedding-foreground, white)
-        &:hover
-            opacity: 0.8
-            transform: translateY(-2px)
-        &:active
-            opacity: 0.6
-            transform: translateY(0)
+.intro-stage,
+.review-container,
+.success-container
+    display: grid
+    gap: var(--space-4)
+    width: 100%
 
-    .gift-button--other
-        border: 2px solid var(--wedding-flower, rgba(255, 255, 255, 0.4))
-        color: var(--wedding-flower, rgba(255, 255, 255, 0.9))
-        background: transparent
-        &:hover
-            opacity: 1.0
-            background: rgba(255, 255, 255, 0.1)
-            transform: translateY(-2px)
-        &:active
-            opacity: 1.0
-            transform: translateY(0)
+.cta-row,
+.button-group,
+.gift-buttons
+    display: flex
+    flex-wrap: wrap
+    gap: var(--space-3)
 
-    .thank-you-message
-        font-size: 1.5rem
-        text-align: center
-        margin-bottom: $s-3
-        font-weight: 600
+.cta-row
+    justify-content: center
+
+.button-group
+    justify-content: center
+
+.gift-buttons
+    justify-content: flex-start
+
+.gift-buttons > *
+    flex: 1 1 180px
+
+.flower-hero,
+.flower-small
+    background-color: var(--wedding-flower, rgba(255, 255, 255, 0.75))
+    mask: url('./wedding_flower.svg') center / contain no-repeat
+    -webkit-mask: url('./wedding_flower.svg') center / contain no-repeat
+    width: 100%
+    aspect-ratio: 673 / 850
+    justify-self: center
+
+.flower-hero
+    max-width: 260px
+
+.flower-small
+    max-width: 140px
+
+.form-container,
+.details-card
+    width: 100%
+    display: grid
+    gap: var(--space-3)
+    padding: var(--space-4)
+    border: 1px solid rgba(255, 255, 255, 0.26)
+    background-color: rgba(0, 0, 0, 0.12)
+
+.text-input-form,
+.edit-form
+    display: grid
+    gap: var(--space-3)
+
+.text-input-form label,
+.edit-form label
+    font-size: 1.15rem
+    font-weight: 700
+
+.subtext
+    color: var(--wedding-flower, rgba(255, 255, 255, 0.82))
+    opacity: 0.9
+    line-height: 1.55
+
+.text-input
+    width: 100%
+    min-height: 130px
+    padding: var(--space-3)
+    border: 1px solid rgba(255, 255, 255, 0.35)
+    border-radius: var(--radius-sm)
+    background-color: rgba(0, 0, 0, 0.14)
+    color: var(--wedding-flower, #ffffff)
+    resize: vertical
+
+.text-input::placeholder
+    color: rgba(255, 255, 255, 0.62)
+
+.text-input:focus-visible
+    outline-color: var(--wedding-flower, #ffffff)
+
+.confirm-button,
+.edit-button,
+.gift-button
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    min-height: 46px
+    padding: 0 var(--space-4)
+    border: 1px solid var(--wedding-flower, rgba(255, 255, 255, 0.45))
+    border-radius: var(--radius-sm)
+    cursor: pointer
+
+.confirm-button,
+.gift-button
+    background-color: var(--wedding-flower, #ffffff)
+    color: var(--wedding-foreground, #001d33)
+
+.confirm-button:hover,
+.gift-button:hover
+    opacity: 0.88
+
+.edit-button
+    background-color: transparent
+    color: var(--wedding-flower, #ffffff)
+
+.edit-button:hover
+    background-color: rgba(255, 255, 255, 0.08)
+
+.gift-button--other
+    background-color: transparent
+    color: var(--wedding-flower, #ffffff)
+
+.gift-button--other:hover
+    background-color: rgba(255, 255, 255, 0.08)
+    opacity: 1
+
+.generating-message
+    display: grid
+    justify-items: center
+    gap: var(--space-3)
+    padding: var(--space-5) var(--space-4)
+    text-align: center
+
+.spinner
+    width: 40px
+    height: 40px
+    border: 3px solid rgba(255, 255, 255, 0.2)
+    border-top-color: var(--wedding-flower, #ffffff)
+    border-radius: 50%
+    animation: spin 0.9s linear infinite
+
+.details-list
+    list-style: none
+    margin: 0
+    padding: 0
+    display: grid
+    gap: var(--space-2)
+
+.details-list li
+    display: grid
+    gap: var(--space-1)
+    padding-bottom: var(--space-2)
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15)
+
+.details-list li:last-child
+    border-bottom: 0
+    padding-bottom: 0
+
+.label
+    font-family: var(--font-mono)
+    font-size: 0.78rem
+    letter-spacing: 0.08em
+    text-transform: uppercase
+    opacity: 0.8
+
+.value
+    line-height: 1.55
+
+.gift-description,
+.ai-message,
+.thank-you-message
+    line-height: 1.65
+
+.thank-you-message
+    font-size: 1.4rem
+    font-weight: 700
+    text-align: center
+
+.fade-in
+    animation: fade-in 220ms ease
+
+.fade-in-delay
+    animation: fade-in 220ms ease 120ms both
+
+.slide-up
+    animation: fade-in 220ms ease
+
+@keyframes fade-in
+    from
+        opacity: 0
+    to
+        opacity: 1
 
 @keyframes spin
     to
         transform: rotate(360deg)
 
-@keyframes fadeIn
-    from
-        opacity: 0
-    to
-        opacity: 1
+@media (max-width: 1400px)
+    .home-header-shell,
+    .home-title-stage__inner,
+    .home-frame
+        padding-inline: var(--space-6)
 
-@keyframes slideUp
-    from
-        opacity: 0
-        transform: translateY(20px)
-    to
-        opacity: 1
-        transform: translateY(0)
+@media (max-width: 960px)
+    .home-header-shell,
+    .home-title-stage__inner,
+    .home-frame
+        padding-inline: var(--space-4)
 
-.fade-in
-    animation: fadeIn 0.5s ease-in
+    .home-card-grid
+        grid-template-columns: repeat(2, minmax(0, 1fr))
 
-.fade-in-delay
-    animation: fadeIn 0.5s ease-in 0.3s both
+    .home-section-copy,
+    .home-two-column
+        grid-template-columns: 1fr
 
-.slide-up
-    animation: slideUp 0.6s ease-out 0.2s both
+    .home-proof-panel--row
+        grid-template-columns: 1fr
 
-.resume-wrapper
-    @extend %center-shell
-    max-width: 800px
-    width: 100%
-    padding: $s-4
-    gap: $s-4
-    font-family: $font-sans
-    color: $text-base
-    font-weight: 500
+    .home-timeline-item:nth-child(2n + 1) .home-timeline-card,
+    .home-timeline-item:nth-child(2n) .home-timeline-card
+        margin-left: 0
+        margin-right: 0
 
-.feed-wrapper
-    @include stack($s-1)
-    align-items: stretch
-    width: 100%
-    padding-bottom: $s-6
+@media (max-width: 720px)
+    .page-shell--resume,
+    .page-shell--wedding
+        padding: var(--space-4) var(--space-3)
 
-.button-wrapper
-    display: flex
-    justify-content: center
-    width: 100%
-    margin-top: $s-3
-    gap: $s-1
+    .home-header-shell,
+    .home-title-stage__inner,
+    .home-frame
+        padding-inline: var(--space-3)
 
-.name
-    font-size: 3rem
-    color: $text-white
+    .home-header
+        flex-direction: column
+        align-items: flex-start
+        padding-top: var(--space-4)
+        padding-bottom: var(--space-4)
 
-.guy
-    width: 200px
-    margin-top: $s-3
-    margin-bottom: $s-2
+    .home-hero
+        padding: var(--space-6) 0
 
-.main-button
-    background-color: $color-indigo-1
-    border-radius: $s-0-5
-    border: none
-    font-family: $font-block
-    font-weight: 400
-    letter-spacing: 0.25px
-    font-size: 1.5rem
-    padding: $s-1-5 $s-2-5
-    color: $color-indigo-3
-    cursor: pointer
-    transition: all 150ms ease
-    position: relative
-    &:hover
-        background-color: $color-indigo-0
-    &:active
-        background-color: $color-indigo-2
-    &:focus-visible
-        outline: 2px solid $color-indigo-3
-    &:disabled
-        background-color: $color-indigo-0
-        color: $text-hover
-        opacity: 0.5
-        cursor: default
-    &.small
-        font-size: 1rem
-        font-family: $font-sans
-        font-weight: 700
-        letter-spacing: unset
-        padding: $s-0-5 $s-1
+    .home-closing
+        padding: var(--space-4)
+        margin-top: 0
 
-a.main-button
-    text-decoration: none
-    display: inline-flex
-    align-items: center
-    justify-content: center
+    .home-card-grid
+        grid-template-columns: 1fr
 
-    .pulse
-        position: absolute
-        top: 0
-        left: 0
-        z-index: -99
-        border-radius: $s-0-5
-        background-color: #ffffff30
-        animation: pulse 4s infinite
-        width: 100%
-        height: 100%
+    .home-timeline
+        padding-left: 0
 
-.subheader
-    font-size: 1.3rem
-    font-family: $font-sans
-    color: $text-white
+    .home-timeline-spine
+        left: 14px
 
-.content-block
-    @include stack($s-1, flex-start)
-    margin-top: $s-1
-    font-family: $font-sans
-    color: $text-base
-    font-weight: 500
-    @include surface($material-base, $s-1, $s-2)
-    .generated-text
-        line-height: 150%
-        text-align: left
-        font-size: 1rem
-        font-family: $font-sans
-    .loading-text
-        animation: loading 2s infinite ease-in-out
-        @keyframes loading
-            0%
-                opacity: 1
-            50%
-                opacity: 0.5
-            100%
-                opacity: 1
+    .home-timeline-item
+        grid-template-columns: 28px minmax(0, 1fr)
+        gap: var(--space-3)
 
-.input-group
-    display: flex
-    justify-content: center
-    width: 100%
-    gap: $s-1
-
-input
-    font-family: $font-sans
-    flex-grow: 1
-
-.resume
-    @include stack($s-4, stretch)
-    width: 100%
-
-.resume__header
-    @include stack($s-2, stretch)
-    text-align: left
-    color: $text-white
-
-.resume__name
-    text-transform: lowercase
-    font-family: $font-block
-    font-size: 4rem
-
-.resume__title
-    font-size: 1.5rem
-    font-weight: 700
-    margin: 0
-
-.resume__lead
-    font-size: 1.1rem
-    line-height: 1.6
-    margin-bottom: $s-1
-    max-width: 520px
-
-.resume__actions
-    display: flex
-    flex-wrap: wrap
-    gap: $s-1
-    margin-bottom: $s-2
-
-.resume__skills
-    @include surface($material-base, $s-1, $s-2)
-    font-family: $font-sans
-    color: $text-base
-    h2
-        margin: 0 0 $s-1 0
-        font-size: 1rem
-        font-family: $font-sans
-        text-transform: uppercase
-        letter-spacing: 1px
-    ul
-        margin: 0
-        padding-left: $s-3
-        display: grid
-        gap: $s-0-5
-
-.resume__experience
-    @include stack($s-2, stretch)
-    text-align: left
-    h2
-        margin: 0
-        color: $color-indigo-0
-        text-transform: uppercase
-        font-size: 1rem
-        letter-spacing: 1px
-
-.resume__experience-list
-    @include stack($s-2, stretch)
-
-.resume__experience-item
-    @include surface($material-base, $s-1, $s-4)
-    @include stack($s-1, stretch)
-    h3
-        margin: 0
-        font-size: 1.2rem
-        font-weight: 700
-    h4
-        margin: 0
-        font-size: 1rem
-        font-weight: 700
-    ul
-        margin: 0
-        padding-left: $s-3
-        display: grid
-        gap: $s-0-5
-        max-width: 80%
-    li
-        line-height: 1.5
-
-.resume__experience-meta
-    display: flex
-    flex-wrap: wrap
-    gap: $s-0-5
-    font-size: 0.9rem
-    font-weight: 500
-    color: $text-down
-    span:not(:last-child)::after
-        content: '•'
-        margin-left: $s-0-5
-        margin-right: $s-0-5
-
-.resume__experience-skills
-    font-size: 0.9rem
-    color: $text-down
-    margin: 0
-
-@media (max-width: 640px)
-    .resume-wrapper
-        padding: $s-2
-    .resume__actions
+    .home-actions,
+    .resume__actions,
+    .cta-row,
+    .button-group
         flex-direction: column
         align-items: stretch
+
+    .home-button,
+    .main-button,
+    .confirm-button,
+    .edit-button,
+    .gift-button
+        width: 100%
+
+    .wedding-wrapper
+        max-width: 100%
+
+    .details-list li
+        gap: 6px
 
 @media print
     body
         background-color: #ffffff
-        color: #000000
-    .resume__header
+
+    .page-shell--resume
         padding: 0
-        gap: 0
-        color: #000000
-        font-size: 1.5rem
-    .resume__name
-        font-size: 2rem
-        color: #000000
-    .resume__title
-        margin: 0
-        font-size: 1.2rem
-    .resume__experience
-        h2
-            text-transform: none
-            color: #000000
-    .resume__experience-item
-        padding: 0
-    .resume-wrapper
-        max-width: none
-        padding: $s-1
+
     .resume__actions
         display: none
 
-.color-results
-    display: flex
-    align-self: stretch
-    font-size: .9rem
-    flex-direction: column
-    font-family: $font-sans
-    border-radius: $s-2
+    .resume__header
+        padding-bottom: var(--space-4)
 
-.color-cost
-    font-size: 1rem
-    margin-top: $s-1-5
-    margin-bottom: $s-1
-    font-family: $font-block
-
-.link
-    font-size: 1rem
-    font-weight: 500
-    margin: $s-2
-    font-family: $font-sans
-    a
-        padding: 2px $s-0-5
-        border-radius: $s-0-5
-
-.avatar-container
-    display: flex
-    flex-direction: row
-    gap: $s-1
-    margin-top: $s-3
-    .avatar
-        width: $s-3
-        border-radius: 6px
-    .avatar-label
-        font-family: $font-block
-        font-weight: 100
-        line-height: 1.25rem
-        letter-spacing: 0.3px
-        font-size: 1.25rem
-
-.mind-meld-game
-    display: flex
-    flex-direction: column
-    align-items: center
-    justify-content: center
-    font-family: $font-sans
-    font-weight: 500
-    font-size: 1.5rem
-    gap: $s-0-5
-    padding-top: $s-1
-    min-height: 480px
-    color: $material-base
-    @media (max-width: 800px)
-        min-width: 300px
-    @media (min-width: 800px)
-        min-width: 480px
-    .subtitle
-        font-size: 1.25rem
-        max-width: 520px
-        margin: 0px
-    h2
-        margin: 0px
-        color: $color-indigo-0
-        font-weight: 400
-        font-family: $font-block
-        font-display: block
-        text-shadow: $s-2 $s-2 0 $color-indigo-3,(-$s-2) $s-2 0 $color-indigo-3, (-$s-2) (-$s-2) 0 $color-indigo-3, $s-2 (-$s-2) 0 $color-indigo-3, $s-2 0px 0 $color-indigo-3, (-$s-2) 0px 0 $color-indigo-3, 0px $s-2 0 $color-indigo-3, 0px (-$s-2) 0 $color-indigo-3
-        @media (max-width: 800px)
-            font-size: 5rem
-        @media (min-width: 800px)
-            font-size: 7rem
-    .game-area
-        display: flex
-        flex-direction: column
-        align-items: center
-        gap: $s-0-5
-        padding: $s-2
-        .timer
-            font-size: $s-2-5
-            background-color: $color-indigo-3
-            border-radius: $s-1
-            padding: $s-1-5
-            #timerDisplay
-                font-weight: 700
-                font-family: $font-mono
-                padding: $s-0-5 $s-1
-                background-color: $color-indigo-2
-                border-radius: $s-0-5
-                &.time-running-out
-                    color: $color-red-1
-
-        .message-display
-            @include stack($s-1, center)
-            font-size: 1rem
-            @include surface($padding: $s-2)
-            .prev-words-container
-                display: flex
-                flex-direction: row
-                align-items: center
-                flex-wrap: wrap
-                max-width: 520px
-                gap: $s-1
-                .prev-words-group
-                    display: flex
-                    flex-direction: row
-                    align-items: center
-                    gap: 0px
-                    .prev-words
-                        position: relative
-                        margin: 0px
-                        padding: $s-0-5 $s-1
-                        &.prev-words-user
-                            border: 1px solid $color-indigo-0
-                            border-radius: $s-0-5 0px 0px $s-0-5
-                            color: $color-indigo-0
-                        &.prev-words-ai
-                            border: 1px solid $color-indigo-1
-                            border-left: none
-                            border-radius: 0px $s-0-5 $s-0-5 0px
-                            color: $color-indigo-0
-                        &.prev-words-match
-                            background-color: $color-green-1
-                            color: $color-indigo-3
-                            border-radius: $s-0-5
-                        .new-badge
-                            position: absolute
-                            z-index: 100
-                            top: -10px
-                            right: -5px
-                            font-size: 0.6rem
-                            background-color: $color-indigo-0
-                            color: $color-indigo-3
-                            padding: 1px $s-0-5
-                            border-radius: 3px
-                            font-weight: bold
-                            opacity: 0
-                            transform: rotate(10deg) scale(0.6)
-                            transition: opacity 0.4s ease, transform 0.5s ease
-                            &.visible
-                                opacity: 1
-                                transform: rotate(10deg) scale(1)
-
-        .game-controls
-            @include stack($s-1, center)
-            p
-                margin: 0px
-            .input-group
-                @include surface()
-            .prompt
-                font-size: 1rem
-                @include surface()
-                gap: $s-0-5
-                .guess-words
-                    display: inline-flex
-                    flex-direction: row
-                    align-items: center
-                    background-color: $color-indigo-1
-                    color: $color-indigo-3
-                    border-radius: $s-0-5
-                    padding: $s-0-5 $s-1
-                    font-weight: 700
-
-    #new-words-count
-        font-size: 0.8rem
-        font-weight: 700
-        background-color: $color-indigo-0
-        color: $color-indigo-3
-        padding: 2px $s-0-5
-        margin-left: $s-0-5
-        border-radius: $s-0-5
-
-.error-message
-    font-size: 0.8rem
-    font-weight: 500
-    color: $text-white
-    @include surface($color-red-1, $s-0-5, 2px $s-0-5)
-
-.success-message
-    font-size: 1.25rem
-    font-family: $font-sans
-    color: $color-indigo-3
-    @include surface($color-green-1, $s-1, $s-2)
-    p
-        margin: 0px
-
-.wave-container
-    display: grid
-    @media (max-width: 800px)
-        grid-template-columns: repeat(9, 1fr)
-        grid-template-rows: repeat(16, 1fr)
-    @media (min-width: 800px)
-        grid-template-columns: repeat(16, 1fr)
-        grid-template-rows: repeat(9, 1fr)
-        align-items: center
-        justify-items: center
-        gap: 1px
-        position: absolute
-        top: 0
-        left: 0
-        width: 100vw
-        height: 100vh
-        z-index: -1
-        overflow: hidden
-        background-color: $color-indigo-3
-    .wave-dot
-        width: 90%
-        height: 90%
-        background-color: $color-indigo-3
-        border-radius: 2%
-
-.loading-words
-    font-size: 0.75rem
-    color: $color-indigo-0
-    font-family: $font-sans
-    opacity: 0.7
-    margin-top: -5px
-
-.loading
-    animation: loading 2s infinite ease-in-out
-
-@keyframes loading
-    0%
-        opacity: 1
-    50%
-        opacity: 0.5
-
-@keyframes pulse
-    0%
-        transform: scaleX(1) scaleY(1)
-    25%
-        transform: scaleX(1.1) scaleY(1.3)
-    100%
-        transform: scaleX(1.1) scaleY(1.3)
-        opacity: 0%
-
-.form-container
-    width: 100%
-    background-color: rgba(255,255,255,0.05)
-    border-radius: $s-1
-    padding: $s-2 $s-4 $s-4
-    border: 1px solid rgba(255,255,255,0.1)
-    backdrop-filter: blur(10px)
-    box-shadow: 0 2px 10px 0 rgba(0,0,0,0.3)
-
-    label
-        margin-top: $s-1
-        font-size: 1.5rem
-        font-family: $font-sans
-        color: var(--wedding-flower, $text-white)
-        font-weight: 700
-        align-self: flex-start
-        text-align: left
-
-    .form-submit
-        background-color: var(--wedding-flower, $color-indigo-1)
-        color: var(--wedding-foreground, $text-white)
-        font-family: $font-sans
-        font-weight: 500
-        font-size: 1rem
-        padding: $s-1-5 $s-3
-        border: none
-        border-radius: $s-9
-        cursor: pointer
-        margin-top: $s-0-5
-        align-self: flex-end
-        transition: 150ms ease
-        &:hover
-            opacity: 0.8
-        &:active
-            opacity: 0.6
-        &:focus-visible
-            outline: 2px solid var(--wedding-flower, $color-indigo-1)
-            outline-offset: 2px
-        &:disabled
-            background-color: rgba(255,255,255,0.5)
-            color: var(--wedding-foreground, $text-hover)
-            opacity: 0.5
-            cursor: default
-    .subtext
-        font-size: 1.1rem
-        font-family: $font-sans
-        font-weight: 500
-        color: var(--wedding-flower, $text-white)
-        opacity: 0.9
-        margin-bottom: $s-1
-        text-align: left
-
-
-@media screen and (max-width: 800px) 
-    .wedding-wrapper
-        max-width: 100%
-        width: auto
-        padding: 0
-        margin-bottom: auto
-        margin-top: 0
-        .form-container
-            max-width: 100%
-            width: auto
-            padding: $s-1-5
-        .text-input-form
-            max-width: 100%
-            gap: $s-0-5
-            width: auto !important
-        .wedding-header
-            padding: 0
-            margin-bottom: $s-3
-            .names
-                font-size: 3.5rem
-        .ai-message
-            font-size: 1rem
-            line-height: 1.4
-        .flower-hero
-            margin-top: $s-6
-            margin-bottom: $s-2
-            max-width: 240px
-        .flower-small
-            max-width: 100px
-            margin: $s-2 0 $s-1
-        .cta-row
-            gap: $s-1
-            padding-top: $s-1
+    .resume__experience-item
+        break-inside: avoid
+        background-color: #ffffff

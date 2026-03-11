@@ -75,30 +75,37 @@ export const Resume: React.FC = () => {
                     AI-focused product designer, engineer, and UX leader building and prototyping next-gen customer service tools at Comcast.
                 </div>
                 <div className="resume__actions">
-                    <button type="button" className="main-button small" onClick={handleSavePdf}>
-                        Save as PDF
-                    </button>
                     <button
                         type="button"
-                        className="main-button small resume__link"
+                        className="home-button home-button--primary"
                         onClick={() => window.open('https://www.linkedin.com/in/adam-yuras-ai', '_blank')}
                     >
                         View LinkedIn
                     </button>
+                    <button type="button" className="home-button" onClick={() => window.open('mailto:adam@adamyuras.com', '_blank')}>
+                        Email Adam
+                    </button>
+                    <button type="button" className="home-button" onClick={handleSavePdf}>
+                        Download PDF
+                    </button>
                 </div>
             </header>
             <section className="resume__experience">
-                <h2>Who I am</h2>
+                <h2>Skills</h2>
                 <div className="resume__experience-list">
                     <article className="resume__experience-item">
-                        <span>{topSkills}</span>
-                    </article>
-                </div>
-                <div className="resume__experience-list">
-                    <article className="resume__experience-item">
-                        <span><h4>Code</h4>Python, TypeScript, JavaScript, React, Vue, Node.js</span>
-                        <span><h4>AI</h4>Google ADK, Google Cloud, Vertex AI, Mastra, OpenAI APIs</span>
-                        <span><h4>Design</h4>Figma, Figjam, UserTesting</span>
+                        <div>
+                            <h4>Code</h4>
+                            <p>Python, C#, TypeScript, JavaScript, React, Vue, Node.js</p>
+                        </div>
+                        <div>
+                            <h4>AI Tooling</h4>
+                            <p>Google ADK, Google Cloud, Vertex AI, Mastra, OpenAI APIs</p>
+                        </div>
+                        <div>
+                            <h4>Design</h4>
+                            <p>Figma, Figjam, UserTesting</p>
+                        </div>
                     </article>
                 </div>
             </section>
@@ -127,4 +134,3 @@ export const Resume: React.FC = () => {
         </div>
     );
 };
-
